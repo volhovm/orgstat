@@ -52,6 +52,7 @@ atPath (AstPath p) f o = atPathDo p o
             ([],_)        -> fmap fmapFoo $ f match
             (cont,Just m) -> fmap (\new -> modified (new:)) $ atPathDo cont m
 
+-- | Checks if something is on that path in given 'Org'.
 existsPath :: AstPath -> Org -> Bool
 existsPath p o = o ^. atPath p . to isJust
 
@@ -71,7 +72,7 @@ data ScopeModifier
 
 -- | Errors related to modifiers application
 data ModifierError
-    = MEConflicting ScopeModifier ScopeModifier
+    = MEConflicting ScopeModifier ScopeModifier Text
     -- ^ Modifiers can't be applied together (del/sel)
     | MEWrongParam ScopeModifier Text
     -- ^ Modifier doesn't support this parameter
@@ -84,6 +85,12 @@ applyModifier m@(ModPruneSubtree path depth) org = do
     unless (existsPath path org) $
         throwError $ MEWrongParam m $ "Path " <> show path <> " doesn't exist"
     pure $ org & atPath path .~ Nothing
+applyModifier m@(ModSelectSubtree path) org = do
+    unless (existsPath path org) $
+        throwError $ MEWrongParam m $ "Path " <> show path <> " doesn't exist"
+    pure $
+        fromMaybe (panic "applyModifier@ModSelectSubtree is broken") $
+        org ^. atPath path
 applyModifier _ org = pure org -- TODO
 
 
@@ -102,6 +109,17 @@ makeLenses ''Scope
 
 -- | Generates an org to be processed by report generators from 'Scope'.
 fromScope :: Scope -> Either ModifierError Org
-fromScope s = foldrM applyModifier (s ^. sRoot) mods
+fromScope s = do
+    whenList addDelConflicts $ \(m1,m2) ->
+        throwError $ MEConflicting m1 m2 "Path of first modifier is subpath of second one"
+    foldrM applyModifier (s ^. sRoot) mods
   where
+    whenList ls foo = case ls of
+        []    -> pass
+        (h:_) -> foo h
+    addDelConflicts =
+        let addDelConflict (ModPruneSubtree a _) (ModSelectSubtree b) = a `isSubPath` b
+            addDelConflict _ _                                        = False
+        in filter (uncurry addDelConflict) modsPairs
+    modsPairs = [(a,b) | a <- mods, b <- mods, a < b]
     mods = s ^. sModifiers . to sort
