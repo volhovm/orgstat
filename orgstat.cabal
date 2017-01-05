@@ -19,9 +19,11 @@ library
                      , base >=4.9 && <4.10
                      , bytestring
                      , directory
+                     , exceptions >= 0.8.3
                      , filepath
                      , formatting
                      , lens >= 4.14
+                     , mtl >= 2.2.1
                      , optparse-simple
                      , orgmode-parse
                      , text >= 1.2.2.1

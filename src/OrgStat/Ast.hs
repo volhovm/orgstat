@@ -5,6 +5,10 @@
 module OrgStat.Ast
        ( Clock (..)
        , Org (..)
+       , orgTitle
+       , orgTags
+       , orgClocks
+       , orgSubtrees
        ) where
 
 import           Control.Lens    (makeLenses)
@@ -19,7 +23,7 @@ import           Universum
 data Clock = Clock
     { cFrom :: UTCTime
     , cTo   :: UTCTime
-    } deriving (Show)
+    } deriving (Show,Eq)
 
 -- | Main datatype of org AST. It may contain some metadata if needed
 -- (e.g. current node depth, children number etc). Content of headers
@@ -29,6 +33,6 @@ data Org = Org
     , _orgTags     :: [Text]
     , _orgClocks   :: [Clock]
     , _orgSubtrees :: [Org]
-    } deriving (Show)
+    } deriving (Show,Eq)
 
 makeLenses ''Org
