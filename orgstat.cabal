@@ -13,14 +13,17 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     OrgStat.Ast
+                     , OrgStat.Parser
                      , OrgStat.Scope
-  build-depends:       base >=4.9 && <4.10
+  build-depends:       attoparsec
+                     , base >=4.9 && <4.10
                      , bytestring
                      , directory
                      , filepath
                      , formatting
                      , lens >= 4.14
                      , optparse-simple
+                     , orgmode-parse
                      , text >= 1.2.2.1
                      , time >= 1.6.0.1
                      , universum >= 0.1.12
