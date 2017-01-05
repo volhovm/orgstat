@@ -22,6 +22,7 @@ library
                      , lens >= 4.14
                      , optparse-simple
                      , text >= 1.2.2.1
+                     , time >= 1.6.0.1
                      , universum >= 0.1.12
   hs-source-dirs:      src
   default-language:    Haskell2010
