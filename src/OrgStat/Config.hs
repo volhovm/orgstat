@@ -4,13 +4,15 @@
 -- | Configuration file parser, together with json instances.
 
 module OrgStat.Config
-       ( ConfReportType(..)
+       ( ConfigException (..)
+       , ConfReportType(..)
        , ConfScope (..)
        , ConfReport (..)
        , OrgStatConfig (..)
        ) where
 
-import           Data.Aeson          (FromJSON (..), Value (Object, String), (.!=), (.:))
+import           Data.Aeson          (FromJSON (..), Value (Object, String), (.!=), (.:),
+                                      (.:?))
 import           Data.Aeson.TH       (deriveFromJSON)
 import           Data.Aeson.Types    (typeMismatch)
 import           Data.List.NonEmpty  (NonEmpty)
@@ -22,25 +24,37 @@ import           Universum
 import           OrgStat.Scope       (AstPath (..), ScopeModifier (..))
 import           OrgStat.Util        (dropLowerOptions)
 
-data ConfDate = ConfNow | ConfZoned ZonedTime deriving (Show)
+-- | Exception type for everything bad that happens with config,
+-- starting from parsing to logic errors.
+data ConfigException
+    = ConfigParseException Text
+    | ConfigLogicException Text
+    deriving (Show, Typeable)
 
-data ConfRange = ConfFromTo ConfDate ConfDate
-               | ConfBlockWeek Int
-               | ConfBlockDay Int
-               | ConfBlockMonth Int
-               deriving (Show)
+instance Exception ConfigException
 
-data ConfReportType = Timeline ConfRange deriving (Show)
+data ConfDate
+    = ConfNow
+    | ConfZoned ZonedTime
+    deriving (Show)
+
+data ConfRange
+    = ConfFromTo ConfDate ConfDate
+    | ConfBlockWeek Int
+    | ConfBlockDay Int
+    | ConfBlockMonth Int
+    deriving (Show)
+
+data ConfReportType = Timeline ConfRange Text deriving (Show)
 
 data ConfScope = ConfScope
-    { csName  :: Maybe Text -- default needs no name
+    { csName  :: Text -- default needs no name
     , csPaths :: NonEmpty FilePath
     } deriving (Show)
 
 data ConfReport = ConfReport
     { crType      :: ConfReportType -- includes config
     , crName      :: Text
-    , crScope     :: Maybe Text
     , crModifiers :: [ScopeModifier]
     } deriving (Show)
 
@@ -54,12 +68,12 @@ instance FromJSON AstPath where
     parseJSON (String s)
         | null s = fail "AstPath FromJson: empty string"
         | otherwise = pure $ AstPath $ T.splitOn "/" s
-    parseJSON invalid    = typeMismatch "AstPath" invalid
+    parseJSON invalid = typeMismatch "AstPath" invalid
 
 instance FromJSON ScopeModifier where
     parseJSON (Object v) = do
         v .: "type" >>= \case
-            (String "prune") -> ModPruneSubtree <$> v .: "path" <*> v .: "depth" .!= 0
+            (String "prune") -> ModPruneSubtree <$> v .: "path" <*> v .:? "depth" .!= 0
             (String "select") -> ModSelectSubtree <$> v .: "path"
             other -> fail $ "Unsupported scope modifier type: " ++ show other
     parseJSON invalid    = typeMismatch "ScopeModifier" invalid
@@ -84,10 +98,21 @@ instance FromJSON ConfRange where
 instance FromJSON ConfReportType where
     parseJSON (Object v) = do
         v .: "type" >>= \case
-            (String "timeline") -> Timeline <$> v .: "range"
+            (String "timeline") ->
+                Timeline <$> v .: "range" <*> v .:? "scope" .!= "default"
             other -> fail $ "Unsupported scope modifier type: " ++ show other
     parseJSON invalid    = typeMismatch "ConfReportType" invalid
 
-deriveFromJSON dropLowerOptions ''ConfScope
-deriveFromJSON dropLowerOptions ''ConfReport
+instance FromJSON ConfScope where
+    parseJSON (Object v) = do
+        ConfScope <$> v .:? "name" .!= "default" <*> v .: "paths"
+    parseJSON invalid    = typeMismatch "ConfScope" invalid
+
+instance FromJSON ConfReport where
+    parseJSON (Object v) = do
+        ConfReport <$> v .: "type"
+                   <*> v .:? "name" .!= "default"
+                   <*> v .:? "modifiers" .!= []
+    parseJSON invalid    = typeMismatch "ConfReport" invalid
+
 deriveFromJSON dropLowerOptions ''OrgStatConfig

@@ -3,6 +3,7 @@
 module OrgStat.Util
        ( dropLowerOptions
        , dropEnd
+       , fromJustM
        ) where
 
 import           Control.Lens     (ix, (%~))
@@ -19,6 +20,9 @@ dropLowerOptions =
     defaultOptions
     { fieldLabelModifier = \x -> (dropWhile isLower x) & ix 0 %~ toLower
     }
+
+fromJustM :: Monad m => m b -> m (Maybe b) -> m b
+fromJustM e m = maybe e pure =<< m
 
 -- | Drops n items from the end.
 dropEnd :: Int -> [x] -> [x]
