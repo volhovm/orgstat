@@ -4,9 +4,16 @@ module OrgStat.Logic
        ( runOrgStat
        ) where
 
+import           Control.Lens      (view)
+import           Data.Yaml         (decode)
+import           System.Wlog       (logDebug)
 import           Universum
 
-import           OrgStat.WorkMonad (WorkM)
+import           OrgStat.IO        (readConfig, readOrgFile)
+import           OrgStat.WorkMonad (WorkM, wConfigFile)
 
 runOrgStat :: WorkM ()
-runOrgStat = notImplemented
+runOrgStat = do
+    config <- readConfig =<< view wConfigFile
+    logDebug $ "Config: \n" <> show config
+    undefined

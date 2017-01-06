@@ -11,7 +11,7 @@ module OrgStat.Config
        ) where
 
 import           Data.Aeson          (FromJSON (..), Value (Object, String), (.!=), (.:))
-import           Data.Aeson.TH       (defaultOptions, deriveFromJSON)
+import           Data.Aeson.TH       (deriveFromJSON)
 import           Data.Aeson.Types    (typeMismatch)
 import           Data.List.NonEmpty  (NonEmpty)
 import qualified Data.Text           as T
@@ -20,32 +20,35 @@ import           Data.Time.LocalTime (ZonedTime)
 import           Universum
 
 import           OrgStat.Scope       (AstPath (..), ScopeModifier (..))
+import           OrgStat.Util        (dropLowerOptions)
 
-data ConfDate = ConfNow | ConfZoned ZonedTime
+data ConfDate = ConfNow | ConfZoned ZonedTime deriving (Show)
 
 data ConfRange = ConfFromTo ConfDate ConfDate
                | ConfBlockWeek Int
                | ConfBlockDay Int
                | ConfBlockMonth Int
+               deriving (Show)
 
-data ConfReportType = Timeline ConfRange
+data ConfReportType = Timeline ConfRange deriving (Show)
+
 
 data ConfScope = ConfScope
     { csName  :: Maybe Text -- default needs no name
     , csNaths :: NonEmpty FilePath
-    }
+    } deriving (Show)
 
 data ConfReport = ConfReport
     { crType       :: ConfReportType -- includes config
     , crReportName :: Text
     , crModifiers  :: ScopeModifier
-    }
+    } deriving (Show)
 
 data OrgStatConfig = OrgStatConfig
     { confScopes    :: [ConfScope]
     , confReports   :: [ConfReport]
     , confOutputDir :: Maybe FilePath -- default is "./orgstat"
-    }
+    } deriving (Show)
 
 instance FromJSON AstPath where
     parseJSON (String s)
@@ -85,5 +88,6 @@ instance FromJSON ConfReportType where
             other -> fail $ "Unsupported scope modifier type: " ++ show other
     parseJSON invalid    = typeMismatch "ConfReportType" invalid
 
-deriveFromJSON defaultOptions ''ConfScope
-deriveFromJSON defaultOptions ''ConfReport
+deriveFromJSON dropLowerOptions ''ConfScope
+deriveFromJSON dropLowerOptions ''ConfReport
+deriveFromJSON dropLowerOptions ''OrgStatConfig

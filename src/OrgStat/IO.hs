@@ -1,20 +1,31 @@
 -- | Operations with files mostly.
 
-module OrgStat.IO (readOrgFile) where
+module OrgStat.IO
+       ( readOrgFile
+       , readConfig
+       ) where
 
+import qualified Data.ByteString  as BS
 import qualified Data.Text        as T
 import qualified Data.Text.IO     as TIO
+import           Data.Yaml        (decodeEither)
 import           System.Directory (doesFileExist)
 import           System.FilePath  (takeBaseName, takeExtension)
 import           Turtle           (procStrict)
 import           Universum
 
 import           OrgStat.Ast      (Org)
+import           OrgStat.Config   (OrgStatConfig)
 import           OrgStat.Parser   (runParser)
+import           OrgStat.Util     (dropEnd)
 
 data OrgIOException
     = OrgIOException Text
-    | OrgGpgException Text
+      -- ^ All exceptions related to reading files
+    | OrgExternalException Text
+      -- ^ Failed to run some external app (gpg)
+    | OrgConfigError Text
+      -- ^ Config parsing problems
     deriving (Show,Typeable)
 
 instance Exception OrgIOException
@@ -24,7 +35,7 @@ instance Exception OrgIOException
 readOrgFile :: (MonadIO m, MonadThrow m) => FilePath -> m (Text, Org)
 readOrgFile fp = do
     unlessM (liftIO $ doesFileExist fp) $
-        throwM $ OrgIOException $ "File " <> fpt <> " doesn't exist"
+        throwM $ OrgIOException $ "Org file " <> fpt <> " doesn't exist"
     (content, fname) <- case takeExtension fp of
         ".gpg" -> (,dropEnd 4 fp) <$> decryptGpg
         ".org" -> (,fp) <$> liftIO (TIO.readFile fp)
@@ -35,10 +46,18 @@ readOrgFile fp = do
     pure (filename, parsed)
   where
     fpt = T.pack fp
-    dropEnd n xs = take (length xs - n) xs
     decryptGpg = do
         (exCode, output) <- procStrict "gpg" ["--quiet", "--decrypt", fpt] empty
         case exCode of
             ExitSuccess   -> pass
-            ExitFailure n -> throwM $ OrgGpgException $ "Failed with code " <> show n
+            ExitFailure n ->
+                throwM $ OrgExternalException $ "Failed with code " <> show n
         pure output
+
+-- | Reads yaml config
+readConfig :: (MonadIO m, MonadThrow m) => FilePath -> m OrgStatConfig
+readConfig fp = do
+    unlessM (liftIO $ doesFileExist fp) $
+        throwM $ OrgIOException $ "Config file " <> T.pack fp <> " doesn't exist"
+    res <- liftIO $ BS.readFile fp
+    either (throwM . OrgConfigError . T.pack) pure $ decodeEither res

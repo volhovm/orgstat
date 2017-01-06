@@ -18,6 +18,7 @@ library
                      , OrgStat.Logic
                      , OrgStat.Parser
                      , OrgStat.Scope
+                     , OrgStat.Util
                      , OrgStat.WorkMonad
   build-depends:       aeson >= 0.11.2.0
                      , attoparsec
