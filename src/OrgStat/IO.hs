@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 -- | Operations with files mostly.
 
 module OrgStat.IO
@@ -36,7 +38,7 @@ instance Exception OrgIOException
 
 -- | Attempts to read a file. If extension is ".gpg", asks a user to
 -- decrypt it first. Returns a pair @(filename, content)@.
-readOrgFile :: (MonadIO m, MonadThrow m, WithLogger m) => FilePath -> m (Text, Org)
+readOrgFile :: (MonadIO m, MonadCatch m, WithLogger m) => FilePath -> m (Text, Org)
 readOrgFile fp = do
     logDebug $ "Reading org file " <> fpt
     unlessM (liftIO $ doesFileExist fp) $
@@ -52,13 +54,16 @@ readOrgFile fp = do
     pure (filename, parsed)
   where
     fpt = T.pack fp
+    failExternal = throwM . ExternalException
     decryptGpg = do
         logDebug $ "Decrypting gpg file: " <> fpt
-        (exCode, output) <- procStrict "gpg" ["--quiet", "--decrypt", fpt] empty
+        (exCode, output) <-
+            (procStrict "gpg" ["--quiet", "--decrypt", fpt] empty)
+            `catch`
+            (\(e :: SomeException) -> failExternal $ "procStrict failed: " <> show e)
         case exCode of
             ExitSuccess   -> pass
-            ExitFailure n ->
-                throwM $ ExternalException $ "Failed with code " <> show n
+            ExitFailure n -> failExternal $ "Failed with code " <> show n
         pure output
 
 -- | Reads yaml config
