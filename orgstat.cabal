@@ -13,9 +13,11 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     OrgStat.Ast
+                     , OrgStat.Config
+                     , OrgStat.Logic
                      , OrgStat.Parser
                      , OrgStat.Scope
-                     , OrgStat.Config
+                     , OrgStat.WorkMonad
   build-depends:       aeson >= 0.11.2.0
                      , attoparsec
                      , base >=4.9 && <4.10
@@ -25,6 +27,7 @@ library
                      , filepath
                      , formatting
                      , lens >= 4.14
+                     , log-warper >= 0.2.1
                      , mtl >= 2.2.1
                      , optparse-simple
                      , orgmode-parse
@@ -54,8 +57,11 @@ executable orgstat-cli
   main-is:             Main.hs
   build-depends:       base >=4.9 && <4.10
                      , bytestring
+                     , exceptions >= 0.8.3
                      , formatting
+                     , log-warper >= 0.2.1
                      , optparse-simple
+                     , orgstat
                      , universum >= 0.1.12
   hs-source-dirs:      src/cli
   default-language:    Haskell2010

@@ -1,11 +1,18 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Main where
 
+import           Control.Monad.Catch        (catch)
 import           Data.Version               (showVersion)
 import           Options.Applicative.Simple (Parser, help, long, metavar, simpleOptions,
                                              strOption, switch, value)
+import           Paths_orgstat              (version)
+import           System.Wlog                (LoggingFormat (..), logDebug, logError)
+import qualified System.Wlog                as W
 import           Universum
 
-import           Paths_orgstat              (version)
+import           OrgStat.Logic              (runOrgStat)
+import           OrgStat.WorkMonad          (WorkScope (..), runWorkM)
 
 data Args = Args
     { configPath :: !FilePath
@@ -38,5 +45,11 @@ getNodeOptions = do
 
 main :: IO ()
 main = do
-    args <- getNodeOptions
-    when (debug args) $ putText $ "Was launched with options: " <> show args
+    args@Args{..} <- getNodeOptions
+    W.initLoggingWith (LoggingFormat False) (if debug then W.Debug else W.Info)
+    runWorkM (WorkScope configPath) $ do
+        logDebug $ "Just started with options: " <> show args
+        runOrgStat `catch` topHandler
+  where
+    topHandler (e :: SomeException) = do
+        logError $ "Top level error occured: " <> show e
