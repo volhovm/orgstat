@@ -32,16 +32,16 @@ data ConfRange = ConfFromTo ConfDate ConfDate
 
 data ConfReportType = Timeline ConfRange deriving (Show)
 
-
 data ConfScope = ConfScope
     { csName  :: Maybe Text -- default needs no name
-    , csNaths :: NonEmpty FilePath
+    , csPaths :: NonEmpty FilePath
     } deriving (Show)
 
 data ConfReport = ConfReport
-    { crType       :: ConfReportType -- includes config
-    , crReportName :: Text
-    , crModifiers  :: ScopeModifier
+    { crType      :: ConfReportType -- includes config
+    , crName      :: Text
+    , crScope     :: Maybe Text
+    , crModifiers :: [ScopeModifier]
     } deriving (Show)
 
 data OrgStatConfig = OrgStatConfig

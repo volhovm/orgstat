@@ -8,7 +8,7 @@ module OrgStat.Util
 import           Control.Lens     (ix, (%~))
 import           Data.Aeson.TH    (defaultOptions)
 import           Data.Aeson.Types (Options, fieldLabelModifier)
-import           Data.Char        (isLower, toUpper)
+import           Data.Char        (isLower, toLower)
 import           Universum
 
 -- | JSON/Yaml TH modifier. Each field of type "aoeuKek" turns into
@@ -17,7 +17,7 @@ import           Universum
 dropLowerOptions :: Options
 dropLowerOptions =
     defaultOptions
-    { fieldLabelModifier = \x -> (dropWhile isLower x) & ix 0 %~ toUpper
+    { fieldLabelModifier = \x -> (dropWhile isLower x) & ix 0 %~ toLower
     }
 
 -- | Drops n items from the end.

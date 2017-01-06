@@ -60,7 +60,9 @@ executable orgstat-cli
   main-is:             Main.hs
   build-depends:       base >=4.9 && <4.10
                      , bytestring
+                     , directory
                      , exceptions >= 0.8.3
+                     , filepath
                      , formatting
                      , log-warper >= 0.2.1
                      , optparse-simple
