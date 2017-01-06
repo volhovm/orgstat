@@ -1,15 +1,33 @@
+-- | Org-mode format parsing.
+
 module OrgStat.Parser
-       ( parseOrg
+       ( ParsingException (..)
+       , parseOrg
+       , runParser
        ) where
 
-import           Universum
-
+import           Control.Exception    (Exception)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.OrgMode.Parse   as OP
 import           Data.Time.Calendar   (fromGregorian)
 import           Data.Time.Clock      (UTCTime (..), secondsToDiffTime)
+import           Universum
 
 import           OrgStat.Ast          (Clock (..), Org (..))
+
+----------------------------------------------------------------------------
+-- Exceptions
+----------------------------------------------------------------------------
+
+data ParsingException =
+    ParsingException Text
+    deriving (Show, Typeable)
+
+instance Exception ParsingException
+
+----------------------------------------------------------------------------
+-- Parsing
+----------------------------------------------------------------------------
 
 parseOrg :: [Text] -> A.Parser Org
 parseOrg todoKeywords = convertDocument <$> OP.parseDocument todoKeywords
@@ -60,3 +78,7 @@ parseOrg todoKeywords = convertDocument <$> OP.parseDocument todoKeywords
           (fromGregorian (toInteger year) month day)
           (secondsToDiffTime $ toInteger $ 60*(60*hour + minute))
     convertDateTime _ = Nothing
+
+-- Throw parsing exception if it can't be parsed (use Control.Monad.Catch#throwM)
+runParser :: (MonadThrow m) => Text -> m Org
+runParser t = undefined
