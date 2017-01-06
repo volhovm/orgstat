@@ -10,17 +10,25 @@ module OrgStat.Config
        , OrgStatConfig (..)
        ) where
 
-import           Data.Aeson         (FromJSON (..), Value (String))
-import           Data.Aeson.TH      (defaultOptions, deriveFromJSON, deriveJSON,
-                                     deriveToJSON)
-import           Data.Aeson.Types   (typeMismatch)
-import           Data.List.NonEmpty (NonEmpty)
-import qualified Data.Text          as T
+import           Data.Aeson          (FromJSON (..), Value (Object, String), (.!=), (.:))
+import           Data.Aeson.TH       (defaultOptions, deriveFromJSON)
+import           Data.Aeson.Types    (typeMismatch)
+import           Data.List.NonEmpty  (NonEmpty)
+import qualified Data.Text           as T
+import           Data.Time.Format    (defaultTimeLocale, parseTimeM)
+import           Data.Time.LocalTime (ZonedTime)
 import           Universum
 
-import           OrgStat.Scope      (AstPath (..), ScopeModifier (..))
+import           OrgStat.Scope       (AstPath (..), ScopeModifier (..))
 
-data ConfReportType = Timeline
+data ConfDate = ConfNow | ConfZoned ZonedTime
+
+data ConfRange = ConfFromTo ConfDate ConfDate
+               | ConfBlockWeek Int
+               | ConfBlockDay Int
+               | ConfBlockMonth Int
+
+data ConfReportType = Timeline ConfRange
 
 data ConfScope = ConfScope
     { csName  :: Maybe Text -- default needs no name
@@ -45,8 +53,37 @@ instance FromJSON AstPath where
         | otherwise = pure $ AstPath $ T.splitOn "/" s
     parseJSON invalid    = typeMismatch "AstPath" invalid
 
-deriveToJSON defaultOptions ''AstPath
-deriveJSON defaultOptions ''ScopeModifier
-deriveFromJSON defaultOptions ''ConfReportType
+instance FromJSON ScopeModifier where
+    parseJSON (Object v) = do
+        v .: "type" >>= \case
+            (String "prune") -> ModPruneSubtree <$> v .: "path" <*> v .: "depth" .!= 0
+            (String "select") -> ModSelectSubtree <$> v .: "path"
+            other -> fail $ "Unsupported scope modifier type: " ++ show other
+    parseJSON invalid    = typeMismatch "ScopeModifier" invalid
+
+instance FromJSON ConfDate where
+    parseJSON (String "now") = pure $ ConfNow
+    parseJSON (String s)     =
+        case parseTimeM True defaultTimeLocale "%Y-%m-%d %H:%M" (T.unpack s) of
+            Nothing -> fail $
+                "Couldn't read date " <> show s <>
+                ". Correct format is 2016-01-01 23:59"
+            Just zt -> pure $ ConfZoned zt
+    parseJSON invalid        = typeMismatch "ConfDate" invalid
+
+instance FromJSON ConfRange where
+    parseJSON (String "day")   = pure $ ConfBlockDay 0 -- todo add "-N" modifiers
+    parseJSON (String "week")  = pure $ ConfBlockWeek 0
+    parseJSON (String "month") = pure $ ConfBlockMonth 0
+    parseJSON (Object v)       = ConfFromTo <$> v .: "from" <*> v .: "to"
+    parseJSON invalid          = typeMismatch "ConfRange" invalid
+
+instance FromJSON ConfReportType where
+    parseJSON (Object v) = do
+        v .: "type" >>= \case
+            (String "timeline") -> Timeline <$> v .: "range"
+            other -> fail $ "Unsupported scope modifier type: " ++ show other
+    parseJSON invalid    = typeMismatch "ConfReportType" invalid
+
 deriveFromJSON defaultOptions ''ConfScope
 deriveFromJSON defaultOptions ''ConfReport

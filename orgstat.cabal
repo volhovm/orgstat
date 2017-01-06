@@ -15,8 +15,9 @@ library
   exposed-modules:     OrgStat.Ast
                      , OrgStat.Parser
                      , OrgStat.Scope
-  build-depends:       attoparsec
-                     , aeson >= 0.11.2.0
+                     , OrgStat.Config
+  build-depends:       aeson >= 0.11.2.0
+                     , attoparsec
                      , base >=4.9 && <4.10
                      , bytestring
                      , directory
@@ -29,8 +30,8 @@ library
                      , orgmode-parse
                      , text >= 1.2.2.1
                      , time >= 1.6.0.1
-                     , yaml >= 0.8.21.1
                      , universum >= 0.1.12
+                     , yaml >= 0.8.21.1
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -O2
