@@ -4,6 +4,8 @@ module OrgStat.Report.Class
        ( Report (..)
        ) where
 
+import qualified Diagrams.Backend.SVG as DB
+import qualified Diagrams.Prelude     as D
 import           Universum
 
 import           OrgStat.Report.Types (SVGImageReport (..))
@@ -14,4 +16,7 @@ class Report a where
     writeReport :: (MonadIO m) => FilePath -> a -> m ()
 
 instance Report SVGImageReport where
-    writeReport _fp (SVGImage _) = notImplemented
+    writeReport fp (SVGImage (width, height) diagram) =
+        liftIO $ DB.renderSVG fp size diagram
+      where
+        size = (D.mkSizeSpec (D.V2 (Just width) (Just height)))
