@@ -69,5 +69,9 @@ timelineDay clocks = mconcat
         & D.moveOriginTo (D.p2 (-w/2, h/2))
         & D.moveTo (D.p2 (0, totalHeight - diffTimeToMinutes start))
 
+-- timelines for several days
+timelineDays :: [[(Text, (DiffTime, DiffTime))]] -> D.Diagram B
+timelineDays times = D.hsep 10 $ map timelineDay times
+
 processTimeline :: (MonadThrow m) => TimelineParams -> Org -> m SVGImageReport
 processTimeline = notImplemented
