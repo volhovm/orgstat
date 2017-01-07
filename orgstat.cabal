@@ -30,10 +30,13 @@ library
                      , bytestring
                      , data-default >= 0.7.1.1
                      , directory
+                     , diagrams-lib
+                     , diagrams-svg
                      , exceptions >= 0.8.3
                      , filepath
                      , formatting
                      , lens >= 4.14
+                     , linear
                      , log-warper >= 0.2.1
                      , mtl >= 2.2.1
                      , optparse-simple
