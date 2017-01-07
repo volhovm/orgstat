@@ -9,6 +9,7 @@ module OrgStat.Parser
 import           Control.Exception    (Exception)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.OrgMode.Parse   as OP
+import qualified Data.Text            as T
 import           Data.Time.Calendar   (fromGregorian)
 import           Data.Time.Clock      (UTCTime (..), secondsToDiffTime)
 import           Universum
@@ -81,4 +82,9 @@ parseOrg todoKeywords = convertDocument <$> OP.parseDocument todoKeywords
 
 -- Throw parsing exception if it can't be parsed (use Control.Monad.Catch#throwM)
 runParser :: (MonadThrow m) => Text -> m Org
-runParser t = undefined
+runParser t =
+    case A.parseOnly (parseOrg todoKeywords) t of
+      Left err  -> throwM $ ParsingException $ T.pack err
+      Right res -> pure res
+  where
+    todoKeywords = ["TODO", "DONE", "!", "~", "+"]
