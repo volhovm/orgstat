@@ -73,5 +73,39 @@ timelineDay clocks = mconcat
 timelineDays :: [[(Text, (DiffTime, DiffTime))]] -> D.Diagram B
 timelineDays times = D.hsep 10 $ map timelineDay times
 
+-- [(a, [b])] -> [(a, b)]
+allClocks :: [(Text, [(DiffTime, DiffTime)])] -> [(Text, (DiffTime, DiffTime))]
+allClocks tasks = do
+  (label, clocks) <- tasks
+  clock <- clocks
+  pure (label, clock)
+
+-- separate list for each day
+selectDays :: [Day] -> [(Text, [Clock])] -> [[(Text, [(DiffTime, DiffTime)])]]
+selectDays days tasks =
+    foreach days $ \day ->
+      filter (not . null . snd) $
+      map (second (selectDay day)) tasks
+  where
+    selectDay :: Day -> [Clock] -> [(DiffTime, DiffTime)]
+    selectDay day clocks = do
+        (Clock (UTCTime dFrom tFrom) (UTCTime dTo tTo)) <- clocks
+        guard $ any (== day) [dFrom, dTo]
+        let tFrom' = if dFrom == day then tFrom else fromInteger 0
+        let tTo'   = if dTo   == day then tTo   else fromInteger (24*60*60)
+        pure (tFrom', tTo')
+
+-- list of leaves
+orgToList :: Org -> [(Text, [Clock])]
+orgToList = orgToList' ""
+  where
+    orgToList' :: Text -> Org -> [(Text, [Clock])]
+    orgToList' _pr org =
+      --let path = pr <> "/" <> _orgTitle org
+      let path = _orgTitle org
+      in case _orgSubtrees org of
+        [] -> [(path, _orgClocks org)]
+        _  -> concatMap (orgToList' path) (_orgSubtrees org)
+
 processTimeline :: (MonadThrow m) => TimelineParams -> Org -> m SVGImageReport
 processTimeline = notImplemented
