@@ -118,3 +118,23 @@ processTimeline _params org = pure (SVGImage (width, height) pic)
 
     clockLists = map allClocks $ selectDays daysToShow $ orgToList org
     pic = timelineDays clockLists
+
+-- test
+mm :: IO ()
+mm =
+  let
+    daysToShow =
+      foreach [1..7] $ \day ->
+      fromGregorian 2017 1 day
+    width = 1000
+    height = 720
+  in do
+    txt <- readFile "/home/zhenya/Dropbox/org/proj.org"
+    let
+      Right org = A.parseOnly (parseOrg ["!","&","+"]) txt
+
+      clockLists = map allClocks $ selectDays daysToShow $ orgToList org
+      pic = timelineDays clockLists
+
+    --mapM_ print allClocks
+    DB.renderSVG "./tmp/some.svg" (D.mkSizeSpec $ D.V2 (Just width) (Just height)) pic
