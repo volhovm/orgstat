@@ -108,4 +108,13 @@ orgToList = orgToList' ""
         _  -> concatMap (orgToList' path) (_orgSubtrees org)
 
 processTimeline :: (MonadThrow m) => TimelineParams -> Org -> m SVGImageReport
-processTimeline = notImplemented
+processTimeline _params org = pure (SVGImage (width, height) pic)
+  where
+    daysToShow =
+      foreach [1..7] $ \day ->
+      fromGregorian 2017 1 day
+    width = 1000
+    height = 720
+
+    clockLists = map allClocks $ selectDays daysToShow $ orgToList org
+    pic = timelineDays clockLists
