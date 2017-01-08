@@ -9,6 +9,7 @@ module OrgStat.Report.Timeline
        , tpTopDay
        , tpColumnWidth
        , tpColumnHeight
+       , tpBackground
 
        , processTimeline
        ) where
@@ -41,10 +42,11 @@ data TimelineParams = TimelineParams
     , _tpTopDay       :: Int    -- ^ How many items to include in top day (under column)
     , _tpColumnWidth  :: Double -- ^ Coeff
     , _tpColumnHeight :: Double -- ^ Coeff
+    , _tpBackground   :: (Word8,Word8,Word8)
     } deriving (Show)
 
 instance Default TimelineParams where
-    def = TimelineParams 0 True 5 1 1
+    def = TimelineParams 0 True 5 1 1 (0xff,0x00,0x00)
 
 makeLenses ''TimelineParams
 
@@ -106,10 +108,12 @@ diffTimeMinutes time = diffTimeSeconds time `div` 60
 -- diffTimeHours :: DiffTime -> Integer
 -- diffTimeHours time = diffTimeMinutes time `div` 60
 
+
+sRGB24Tuple :: (Floating a, Ord a) => (Word8,Word8,Word8) -> D.Colour a
+sRGB24Tuple (a,b,c) = D.sRGB24 a b c
+
 labelColour :: TimelineParams -> Text -> D.Colour Double
-labelColour params _label = D.sRGB24 r g b
-  where
-    (r,g,b) = hashColour (params ^. tpColorSalt) _label
+labelColour params _label = sRGB24Tuple $ hashColour (params ^. tpColorSalt) _label
 
 -- timeline for a single day
 timelineDay :: TimelineParams -> Day -> [(Text, (DiffTime, DiffTime))] -> D.Diagram B
@@ -159,7 +163,7 @@ timelineDay params day clocks =
     background =
       D.rect width totalHeight
       & D.lw D.none
-      & D.fc D.red
+      & D.fc (sRGB24Tuple $ params ^. tpBackground)
       & D.moveOriginTo (D.p2 (-width/2, totalHeight/2))
       & D.moveTo (D.p2 (0, totalHeight))
 

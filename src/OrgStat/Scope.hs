@@ -14,7 +14,7 @@ module OrgStat.Scope
        ) where
 
 import qualified Base                 as Base
-import           Control.Lens         (Lens', each, to, view, (%~), (.~), (^.), (^..))
+import           Control.Lens         (Lens', to, view, (%~), (.~), (^.), (^..))
 import           Control.Monad.Except (throwError)
 import qualified Data.Text            as T
 import           Universum
@@ -86,11 +86,9 @@ applyModifier m@(ModPruneSubtree path depth) org = do
     unless (depth >= 0) $ throwError $ MEWrongParam m "Depth should be >= 0"
     unless (existsPath path org) $
         throwError $ MEWrongParam m $ "Path " <> show path <> " doesn't exist"
-    traceM "Applying modifiers"
     let subclocks o' = o' & orgClocks .~ (concatMap (view orgClocks) $ o' ^.. traverseTree)
                           & orgSubtrees .~ []
     let pruneChildren o = o & atDepth depth %~ subclocks
-    traceM "Applied modifier"
     pure $ org & atPath path %~ (\x -> maybe x (Just . pruneChildren) x)
 applyModifier m@(ModSelectSubtree path) org = do
     unless (existsPath path org) $

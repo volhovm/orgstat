@@ -63,10 +63,10 @@ readOrgFile todoKeywords fp = do
         (exCode, output) <-
             (procStrict "gpg" ["--quiet", "--decrypt", fpt] empty)
             `catch`
-            (\(e :: SomeException) -> failExternal $ "procStrict failed: " <> show e)
+            (\(e :: SomeException) -> failExternal $ "gpg procStrict failed: " <> show e)
         case exCode of
             ExitSuccess   -> pass
-            ExitFailure n -> failExternal $ "Failed with code " <> show n
+            ExitFailure n -> failExternal $ "Gpg failed with code " <> show n
         pure output
 
 -- | Reads yaml config

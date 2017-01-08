@@ -98,6 +98,7 @@ runOrgStat = do
             let orgTop = Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) neededOrgs
             withModifiers <- mergeClocks <$> applyMods crModifiers orgTop
             let timelineParamsFinal = timelineParams & tpColorSalt .~ confColorSalt
+            logDebug $ "Launching timeline report with params: " <> show timelineParamsFinal
             (from,to) <- convertRange timelineRange
             res <- processTimeline timelineParamsFinal withModifiers (from,to)
             logInfo $ "Generating report " <> crName <> "..."

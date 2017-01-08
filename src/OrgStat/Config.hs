@@ -1,5 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Configuration file types, together with json instances.
@@ -24,10 +25,10 @@ import           Data.Time               (LocalTime)
 import           Data.Time.Format        (defaultTimeLocale, parseTimeM)
 import           Universum
 
-import           OrgStat.Report.Timeline (TimelineParams, tpColumnHeight, tpColumnWidth,
-                                          tpLegend, tpTopDay)
+import           OrgStat.Report.Timeline (TimelineParams, tpBackground, tpColumnHeight,
+                                          tpColumnWidth, tpLegend, tpTopDay)
 import           OrgStat.Scope           (AstPath (..), ScopeModifier (..))
-import           OrgStat.Util            ((??~))
+import           OrgStat.Util            (parseColour, (??~))
 
 -- | Exception type for everything bad that happens with config,
 -- starting from parsing to logic errors.
@@ -124,10 +125,12 @@ instance FromJSON TimelineParams where
         topDay <- v .:? "topDay"
         colWidth <- v .:? "colWidth"
         colHeight <- v .:? "colHeight"
+        bgColorRaw <- v .:? "background"
         pure $ def & tpLegend ??~ legend
                    & tpTopDay ??~ topDay
                    & tpColumnWidth ??~ colWidth
                    & tpColumnHeight ??~ colHeight
+                   & tpBackground ??~ (T.strip <$> bgColorRaw >>= parseColour @Text)
     parseJSON invalid    = typeMismatch "TimelineParams" invalid
 
 instance FromJSON ConfReportType where
