@@ -246,7 +246,7 @@ processTimeline params org = pure $ timelineReport params org
 -- test
 mm :: IO ()
 mm = do
-    txt <- readFile "/home/zhenya/Dropbox/org/proj.org"
-    let Right org = A.parseOnly (parseOrg ["!","&","+"]) txt
+    txt <- readFile "/home/volhovm/org/study.org"
+    let Right org = A.parseOnly (parseOrg ["TODO", "STARTED", "WAITING", "CANCELED", "DONE"]) txt
     let SVGImage pic = timelineReport def org
-    DB.renderSVG "./tmp/some.svg" (D.dims2D (D.width pic) (D.height pic)) pic
+    DB.renderSVG "./some.svg" (D.dims2D (D.width pic) (D.height pic)) pic
