@@ -29,12 +29,13 @@ library
                      , base >=4.9 && <4.10
                      , bytestring
                      , data-default >= 0.7.1.1
-                     , directory
                      , diagrams-lib
                      , diagrams-svg
+                     , directory
                      , exceptions >= 0.8.3
                      , filepath
                      , formatting
+                     , hashable >= 1.2.4.0
                      , lens >= 4.14
                      , linear
                      , log-warper >= 0.2.1
