@@ -6,27 +6,66 @@ module OrgStat.Logic
        ( runOrgStat
        ) where
 
-import           Control.Lens        (view, (.~))
-import           Data.List           (notElem, nub, nubBy)
-import qualified Data.List.NonEmpty  as NE
-import qualified Data.Map            as M
-import qualified Data.Text           as T
-import           Data.Time.Format    (defaultTimeLocale, formatTime)
-import           Data.Time.LocalTime (getZonedTime)
-import           System.Directory    (createDirectoryIfMissing)
-import           System.FilePath     ((</>))
-import           System.Wlog         (logDebug, logInfo)
+import           Control.Lens                (view, (.~), _2, _3)
+import           Data.List                   (notElem, nub, nubBy)
+import qualified Data.List.NonEmpty          as NE
+import qualified Data.Map                    as M
+import qualified Data.Text                   as T
+import           Data.Time                   (UTCTime (..), addDays, defaultTimeLocale,
+                                              formatTime, getCurrentTime, getZonedTime,
+                                              toGregorian)
+import           Data.Time.Calendar          (addGregorianMonthsRollOver)
+import           Data.Time.Calendar.WeekDate (toWeekDate)
+import           System.Directory            (createDirectoryIfMissing)
+import           System.FilePath             ((</>))
+import           System.Wlog                 (logDebug, logInfo)
 import           Universum
-import           Unsafe              (unsafeHead)
+import           Unsafe                      (unsafeHead)
 
-import           OrgStat.Ast         (Org (..), mergeClocks, orgTitle)
-import           OrgStat.Config      (ConfReport (..), ConfReportType (..),
-                                      ConfScope (..), ConfigException (..),
-                                      OrgStatConfig (..))
-import           OrgStat.IO          (readConfig, readOrgFile)
-import           OrgStat.Report      (processTimeline, tpColorSalt, writeReport)
-import           OrgStat.Util        (fromJustM)
-import           OrgStat.WorkMonad   (WorkM, wConfigFile)
+import           OrgStat.Ast                 (Org (..), mergeClocks, orgTitle)
+import           OrgStat.Config              (ConfDate (..), ConfRange (..),
+                                              ConfReport (..), ConfReportType (..),
+                                              ConfScope (..), ConfigException (..),
+                                              OrgStatConfig (..))
+import           OrgStat.IO                  (readConfig, readOrgFile)
+import           OrgStat.Report              (processTimeline, tpColorSalt, writeReport)
+import           OrgStat.Util                (fromJustM)
+import           OrgStat.WorkMonad           (WorkM, wConfigFile)
+
+
+-- Converts config range to a pair of 'UTCTime', right bound not inclusive.
+convertRange :: (MonadIO m) => ConfRange -> m (UTCTime, UTCTime)
+convertRange range = case range of
+    (ConfFromTo f t)  -> (,) <$> fromConfDate f <*> fromConfDate t
+    (ConfBlockDay i) | i <= 0 -> panic $ "ConfBlockDay i is <0: " <> show i
+    (ConfBlockDay i) -> do
+        d <- (negate i `addDays`) <$> startOfDay
+        pure $ utcFromDayPair ((negate 1) `addDays` d, d)
+    (ConfBlockWeek i) | i <= 0 -> panic $ "ConfBlockWeek i is <0: " <> show i
+    (ConfBlockWeek i) -> do
+        d <- (negate i `addWeeks`) <$> startOfWeek
+        pure $ utcFromDayPair ((negate 1) `addWeeks` d, d)
+    (ConfBlockMonth i) | i <= 0 -> panic $ "ConfBlockMonth i is <0: " <> show i
+    (ConfBlockMonth i) -> do
+        d <- addGregorianMonthsRollOver (negate i) <$> startOfMonth
+        pure $ utcFromDayPair ((negate 1) `addGregorianMonthsRollOver` d, d)
+  where
+    utcFromDay d = UTCTime d 0
+    utcFromDayPair = bimap utcFromDay utcFromDay
+    curDay = liftIO $ utctDay <$> getCurrentTime
+    addWeeks i d = (i*7) `addDays` d
+    startOfDay = curDay
+    startOfWeek = do
+        d <- curDay
+        let weekDay = pred $ view _3 $ toWeekDate d
+        pure $ fromIntegral (negate weekDay) `addDays` d
+    startOfMonth = do
+        d <- curDay
+        let monthDate = pred $ view _2 $ toGregorian d
+        pure $ fromIntegral (negate monthDate) `addDays` d
+    fromConfDate ConfNow     = liftIO getCurrentTime
+    fromConfDate (ConfUTC x) = pure x
+
 
 runOrgStat :: WorkM ()
 runOrgStat = do
@@ -52,7 +91,8 @@ runOrgStat = do
                     mergeClocks $
                     Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) neededOrgs
             let timelineParamsFinal = timelineParams & tpColorSalt .~ confColorSalt
-            res <- processTimeline timelineParamsFinal orgTop undefined
+            (from,to) <- convertRange timelineRange
+            res <- processTimeline timelineParamsFinal orgTop (from,to)
             logInfo $ "Generating report " <> crName <> "..."
             writeReport reportDir (T.unpack crName) res
   where

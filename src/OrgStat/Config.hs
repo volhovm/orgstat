@@ -2,10 +2,12 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
--- | Configuration file parser, together with json instances.
+-- | Configuration file types, together with json instances.
 
 module OrgStat.Config
        ( ConfigException (..)
+       , ConfDate(..)
+       , ConfRange(..)
        , ConfReportType(..)
        , ConfScope (..)
        , ConfReport (..)
@@ -18,8 +20,8 @@ import           Data.Aeson.Types        (typeMismatch)
 import           Data.Default            (def)
 import           Data.List.NonEmpty      (NonEmpty)
 import qualified Data.Text               as T
+import           Data.Time               (UTCTime)
 import           Data.Time.Format        (defaultTimeLocale, parseTimeM)
-import           Data.Time.LocalTime     (ZonedTime)
 import           Universum
 
 import           OrgStat.Report.Timeline (TimelineParams, tpColumnHeight, tpColumnWidth,
@@ -38,14 +40,14 @@ instance Exception ConfigException
 
 data ConfDate
     = ConfNow
-    | ConfZoned ZonedTime
+    | ConfUTC UTCTime
     deriving (Show)
 
 data ConfRange
     = ConfFromTo ConfDate ConfDate
-    | ConfBlockWeek Int
-    | ConfBlockDay Int
-    | ConfBlockMonth Int
+    | ConfBlockWeek Integer
+    | ConfBlockDay Integer
+    | ConfBlockMonth Integer
     deriving (Show)
 
 data ConfReportType = Timeline
@@ -94,7 +96,7 @@ instance FromJSON ConfDate where
             Nothing -> fail $
                 "Couldn't read date " <> show s <>
                 ". Correct format is 2016-01-01 23:59"
-            Just zt -> pure $ ConfZoned zt
+            Just ut -> pure $ ConfUTC ut
     parseJSON invalid        = typeMismatch "ConfDate" invalid
 
 instance FromJSON ConfRange where
