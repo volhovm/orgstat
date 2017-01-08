@@ -42,7 +42,7 @@ makeLenses ''Org
 fmapOrgLens :: ASetter' Org a -> (a -> a) -> Org -> Org
 fmapOrgLens l f o = o & l %~ f & orgSubtrees %~ map (fmapOrgLens l f)
 
--- | Merges task clocks that have less then 5m delta between them into
+-- | Merges task clocks that have less then 1m delta between them into
 -- one.
 mergeClocks :: Org -> Org
 mergeClocks = fmapOrgLens orgClocks (mergeClocksDo . sort)
@@ -50,6 +50,6 @@ mergeClocks = fmapOrgLens orgClocks (mergeClocksDo . sort)
     mergeClocksDo [] = []
     mergeClocksDo [x] = [x]
     mergeClocksDo (a:b:xs)
-        | diffUTCTime (cFrom b) (cTo a) < 5 =
+        | diffUTCTime (cFrom b) (cTo a) <= 1 =
           Clock (cFrom a) (cTo b) : mergeClocksDo xs
         | otherwise = a : mergeClocksDo (b:xs)

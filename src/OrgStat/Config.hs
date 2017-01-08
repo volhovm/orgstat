@@ -20,7 +20,7 @@ import           Data.Aeson.Types        (typeMismatch)
 import           Data.Default            (def)
 import           Data.List.NonEmpty      (NonEmpty)
 import qualified Data.Text               as T
-import           Data.Time               (UTCTime)
+import           Data.Time               (LocalTime)
 import           Data.Time.Format        (defaultTimeLocale, parseTimeM)
 import           Universum
 
@@ -40,7 +40,7 @@ instance Exception ConfigException
 
 data ConfDate
     = ConfNow
-    | ConfUTC UTCTime
+    | ConfLocal LocalTime
     deriving (Show)
 
 data ConfRange
@@ -96,13 +96,27 @@ instance FromJSON ConfDate where
             Nothing -> fail $
                 "Couldn't read date " <> show s <>
                 ". Correct format is 2016-01-01 23:59"
-            Just ut -> pure $ ConfUTC ut
+            Just ut -> pure $ ConfLocal ut
     parseJSON invalid        = typeMismatch "ConfDate" invalid
 
 instance FromJSON ConfRange where
-    parseJSON (String "day")   = pure $ ConfBlockDay 0 -- todo add "-N" modifiers
-    parseJSON (String "week")  = pure $ ConfBlockWeek 0
-    parseJSON (String "month") = pure $ ConfBlockMonth 0
+    parseJSON (String s) | any (`T.isPrefixOf` s) ["day", "week", "month"] = do
+        let splitted = T.splitOn "-" $ if "-" `T.isInfixOf` s then s else s <> "-"
+            [range, number] = splitted
+            constructor = case range of
+                "day"   -> ConfBlockDay
+                "week"  -> ConfBlockWeek
+                "month" -> ConfBlockMonth
+                _       -> panic "ConfRange@parseJSON"
+            numberParsed
+                | number == "" = pure 0
+                | otherwise = case readMaybe (T.unpack number) of
+                    Nothing -> fail $ "Couldn't parse number modifier of " <> T.unpack s
+                    Just x  -> pure x
+        when (length splitted /= 2) $
+            fail $ "Couldn't parse range " <> T.unpack s <>
+                   ", splitted is " <> show splitted
+        constructor <$> numberParsed
     parseJSON (Object v)       = ConfFromTo <$> v .: "from" <*> v .: "to"
     parseJSON invalid          = typeMismatch "ConfRange" invalid
 

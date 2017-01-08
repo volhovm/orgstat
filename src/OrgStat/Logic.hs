@@ -12,8 +12,9 @@ import qualified Data.List.NonEmpty          as NE
 import qualified Data.Map                    as M
 import qualified Data.Text                   as T
 import           Data.Time                   (UTCTime (..), addDays, defaultTimeLocale,
-                                              formatTime, getCurrentTime, getZonedTime,
-                                              toGregorian)
+                                              formatTime, getCurrentTime,
+                                              getCurrentTimeZone, getZonedTime,
+                                              localTimeToUTC, toGregorian)
 import           Data.Time.Calendar          (addGregorianMonthsRollOver)
 import           Data.Time.Calendar.WeekDate (toWeekDate)
 import           System.Directory            (createDirectoryIfMissing)
@@ -67,8 +68,10 @@ convertRange range = case range of
         d <- curDay
         let monthDate = pred $ view _3 $ toGregorian d
         pure $ fromIntegral (negate monthDate) `addDays` d
-    fromConfDate ConfNow     = liftIO getCurrentTime
-    fromConfDate (ConfUTC x) = pure x
+    fromConfDate ConfNow       = liftIO getCurrentTime
+    fromConfDate (ConfLocal x) = do
+        tz <- liftIO getCurrentTimeZone
+        pure $ localTimeToUTC tz x
 
 
 runOrgStat :: WorkM ()
