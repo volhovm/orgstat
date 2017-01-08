@@ -6,7 +6,7 @@ version:             0.1.0.0
 synopsis:            Statistics visualizer for org-mode
 license:             GPL-3
 license-file:        LICENSE
-author:              Mikhail Volkhov
+author:              Mikhail Volkhov <volhovm.cs@gmail.com>, Zhenya Vinogradov <zhenyavinogradov@gmail.com>
 maintainer:          volhovm.cs@gmail.com
 build-type:          Simple
 cabal-version:       >=1.10
