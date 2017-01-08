@@ -37,9 +37,12 @@ instance Base.Show OrgIOException where
 instance Exception OrgIOException
 
 -- | Attempts to read a file. If extension is ".gpg", asks a user to
--- decrypt it first. Returns a pair @(filename, content)@.
-readOrgFile :: (MonadIO m, MonadCatch m, WithLogger m) => FilePath -> m (Text, Org)
-readOrgFile fp = do
+-- decrypt it first. Returns a pair @(filename, content)@. It also
+-- takes a list of TODO-keywords to take header names correctly.
+readOrgFile
+    :: (MonadIO m, MonadCatch m, WithLogger m)
+    => [Text] -> FilePath -> m (Text, Org)
+readOrgFile todoKeywords fp = do
     logDebug $ "Reading org file " <> fpt
     unlessM (liftIO $ doesFileExist fp) $
         throwM $ OrgIOException $ "Org file " <> fpt <> " doesn't exist"
@@ -50,7 +53,7 @@ readOrgFile fp = do
             "File " <> fpt <> " has unknown extension. Need to be .org or .org.gpg"
     let filename = T.pack $ takeBaseName fname
     logDebug $ "Parsing org file " <> fpt
-    parsed <- runParser content
+    parsed <- runParser todoKeywords content
     pure (filename, parsed)
   where
     fpt = T.pack fp

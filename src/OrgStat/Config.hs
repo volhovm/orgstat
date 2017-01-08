@@ -13,7 +13,6 @@ module OrgStat.Config
 
 import           Data.Aeson          (FromJSON (..), Value (Object, String), (.!=), (.:),
                                       (.:?))
-import           Data.Aeson.TH       (deriveFromJSON)
 import           Data.Aeson.Types    (typeMismatch)
 import           Data.List.NonEmpty  (NonEmpty)
 import qualified Data.Text           as T
@@ -22,7 +21,6 @@ import           Data.Time.LocalTime (ZonedTime)
 import           Universum
 
 import           OrgStat.Scope       (AstPath (..), ScopeModifier (..))
-import           OrgStat.Util        (dropLowerOptions)
 
 -- | Exception type for everything bad that happens with config,
 -- starting from parsing to logic errors.
@@ -59,9 +57,10 @@ data ConfReport = ConfReport
     } deriving (Show)
 
 data OrgStatConfig = OrgStatConfig
-    { confScopes    :: [ConfScope]
-    , confReports   :: [ConfReport]
-    , confOutputDir :: Maybe FilePath -- default is "./orgstat"
+    { confScopes       :: [ConfScope]
+    , confReports      :: [ConfReport]
+    , confTodoKeywords :: [Text]
+    , confOutputDir    :: FilePath -- default is "./orgstat"
     } deriving (Show)
 
 instance FromJSON AstPath where
@@ -115,4 +114,10 @@ instance FromJSON ConfReport where
                    <*> v .:? "modifiers" .!= []
     parseJSON invalid    = typeMismatch "ConfReport" invalid
 
-deriveFromJSON dropLowerOptions ''OrgStatConfig
+instance FromJSON OrgStatConfig where
+    parseJSON (Object v) = do
+        OrgStatConfig <$> v .: "scopes"
+                      <*> v .: "reports"
+                      <*> v .:? "todoKeywords" .!= []
+                      <*> v .:? "output" .!= "./orgstat"
+    parseJSON invalid    = typeMismatch "ConfReport" invalid

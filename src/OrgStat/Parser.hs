@@ -81,10 +81,8 @@ parseOrg todoKeywords = convertDocument <$> OP.parseDocument todoKeywords
     convertDateTime _ = Nothing
 
 -- Throw parsing exception if it can't be parsed (use Control.Monad.Catch#throwM)
-runParser :: (MonadThrow m) => Text -> m Org
-runParser t =
+runParser :: (MonadThrow m) => [Text] -> Text -> m Org
+runParser todoKeywords t =
     case A.parseOnly (parseOrg todoKeywords) t of
       Left err  -> throwM $ ParsingException $ T.pack err
       Right res -> pure res
-  where
-    todoKeywords = ["TODO", "DONE", "!", "~", "+"]
