@@ -128,6 +128,20 @@ timelineDay params clocks =
 timelineDays :: TimelineParams -> [[(Text, (DiffTime, DiffTime))]] -> D.Diagram B
 timelineDays params times = D.hsep 10 $ map (timelineDay params) times
 
+-- tasks with their colours
+taskList :: TimelineParams -> [Text] -> D.Diagram B
+taskList params labels = D.vsep 5 $ map oneTask labels
+  where
+    oneTask :: Text -> D.Diagram B
+    oneTask label =
+      D.hsep 5
+      [ D.rect 12 12
+        & D.fc (labelColour params label)
+        & D.lw D.none
+      , D.alignedText 0 0.5 (T.unpack label)
+        & D.font "DejaVu Sans" & D.fontSize 10
+      ]
+
 timelineReport :: TimelineParams -> Org -> SVGImageReport
 timelineReport params org = SVGImage (width, height) pic
   where
@@ -141,7 +155,11 @@ timelineReport params org = SVGImage (width, height) pic
     byDay = selectDays daysToShow tasks
     clocks = map allClocks byDay
 
-    pic = timelineDays params clocks
+    pic =
+      D.vsep 5
+      [ timelineDays params clocks
+      , taskList params (nub $ map fst $ concat byDay)
+      ]
 
 processTimeline :: (MonadThrow m) => TimelineParams -> Org -> m SVGImageReport
 processTimeline params org = pure $ timelineReport params org
