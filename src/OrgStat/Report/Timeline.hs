@@ -87,9 +87,7 @@ orgToList = orgToList' ""
     orgToList' _pr org =
       --let path = pr <> "/" <> _orgTitle org
       let path = _orgTitle org
-      in case _orgSubtrees org of
-        [] -> [(path, _orgClocks org)]
-        _  -> concatMap (orgToList' path) (_orgSubtrees org)
+      in (path, _orgClocks org) : concatMap (orgToList' path) (_orgSubtrees org)
 
 
 ----------------------------------------------------------------------------
