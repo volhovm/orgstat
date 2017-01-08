@@ -7,13 +7,15 @@ module OrgStat.Report.Timeline
 
 import qualified Data.Attoparsec.Text as A
 import           Data.Default         (Default (..))
-import           Data.List            (nub)
+import           Data.List            (lookup, nub)
 import qualified Data.Text            as T
 import           Data.Time            (Day, DiffTime, UTCTime (..), fromGregorian)
 import           Diagrams.Backend.SVG (B)
 import qualified Diagrams.Backend.SVG as DB
 import qualified Diagrams.Prelude     as D
 import           OrgStat.Parser       (parseOrg)
+import qualified Prelude
+import           Text.Printf          (printf)
 import           Universum
 
 import           OrgStat.Ast          (Clock (..), Org (..))
@@ -55,11 +57,18 @@ selectDays days tasks =
   where
     selectDay :: Day -> [Clock] -> [(DiffTime, DiffTime)]
     selectDay day clocks = do
-        (Clock (UTCTime dFrom tFrom) (UTCTime dTo tTo)) <- clocks
+        Clock (UTCTime dFrom tFrom) (UTCTime dTo tTo) <- clocks
         guard $ any (== day) [dFrom, dTo]
         let tFrom' = if dFrom == day then tFrom else fromInteger 0
         let tTo'   = if dTo   == day then tTo   else fromInteger (24*60*60)
         pure (tFrom', tTo')
+
+-- total time for each task
+totalTimes :: [(Text, [(DiffTime, DiffTime)])] -> [(Text, DiffTime)]
+totalTimes tasks = map (second clocksSum) tasks
+  where
+    clocksSum :: [(DiffTime, DiffTime)] -> DiffTime
+    clocksSum clocks = sum $ map (\(start, end) -> end - start) clocks
 
 -- list of leaves
 orgToList :: Org -> [(Text, [Clock])]
@@ -78,8 +87,15 @@ orgToList = orgToList' ""
 -- Drawing
 ----------------------------------------------------------------------------
 
-diffTimeToMinutes :: DiffTime -> Double
-diffTimeToMinutes time = fromInteger $ floor $ (/ 60) $ toRational time
+diffTimeSeconds :: DiffTime -> Integer
+diffTimeSeconds time = floor $ toRational time
+
+diffTimeMinutes :: DiffTime -> Integer
+diffTimeMinutes time = diffTimeSeconds time `div` 60
+
+-- diffTimeHours :: DiffTime -> Integer
+-- diffTimeHours time = diffTimeMinutes time `div` 60
+
 
 labelColour :: TimelineParams -> (Text -> D.Colour Double)
 labelColour _params _label = D.pink
@@ -96,6 +112,7 @@ timelineDay params clocks =
     width = 140 * (totalHeight / height)
     height = 700
 
+    totalHeight :: Double
     totalHeight = 24*60
 
     background :: D.Diagram B
@@ -110,7 +127,7 @@ timelineDay params clocks =
     showClock (label, (start, end)) =
       let
         w = width
-        h = diffTimeToMinutes $ end - start
+        h = fromInteger $ diffTimeMinutes $ end - start
       in
         mconcat
           [ D.alignedText 0 0.5 (T.unpack label)
@@ -122,41 +139,75 @@ timelineDay params clocks =
             & D.fc (labelColour params label)
           ]
         & D.moveOriginTo (D.p2 (-w/2, h/2))
-        & D.moveTo (D.p2 (0, totalHeight - diffTimeToMinutes start))
+        & D.moveTo (D.p2 (0, totalHeight - fromInteger (diffTimeMinutes start)))
 
 -- timelines for several days
 timelineDays :: TimelineParams -> [[(Text, (DiffTime, DiffTime))]] -> D.Diagram B
 timelineDays params times = D.hsep 10 $ map (timelineDay params) times
 
--- tasks with their colours
-taskList :: TimelineParams -> [Text] -> D.Diagram B
+-- task list, with durations and colours
+taskList :: TimelineParams -> [(Text, DiffTime)] -> D.Diagram B
 taskList params labels = D.vsep 5 $ map oneTask labels
   where
-    oneTask :: Text -> D.Diagram B
-    oneTask label =
+    oneTask :: (Text, DiffTime) -> D.Diagram B
+    oneTask (label, time) =
       D.hsep 5
-      [ D.rect 12 12
+      [ D.alignedText 1 0.5 (showTime time)
+        & D.font "DejaVu Sans"
+        & D.fontSize 10
+        & D.translateX 30
+      , D.rect 12 12
         & D.fc (labelColour params label)
         & D.lw D.none
       , D.alignedText 0 0.5 (T.unpack label)
-        & D.font "DejaVu Sans" & D.fontSize 10
+        & D.font "DejaVu Sans"
+        & D.fontSize 10
       ]
+
+    showTime :: DiffTime -> Prelude.String
+    showTime time = printf "%d:%02d" hours minutes
+      where
+        (hours, minutes) = diffTimeMinutes time `divMod` 60
 
 timelineReport :: TimelineParams -> Org -> SVGImageReport
 timelineReport params org = SVGImage pic
   where
+    lookupDef :: Eq a => b -> a -> [(a, b)] -> b
+    lookupDef def a xs = fromMaybe def $ lookup a xs
+
+    -- period to show
     daysToShow =
       foreach [1..7] $ \day ->
       fromGregorian 2017 1 day
 
+    -- unfiltered leaves
+    tasks :: [(Text, [Clock])]
     tasks = orgToList org
+
+    -- tasks from the given period, split by days
+    byDay :: [[(Text, [(DiffTime, DiffTime)])]]
     byDay = selectDays daysToShow tasks
+
+    -- total durations for each task, split by days
+    byDayDurations :: [[(Text, DiffTime)]]
+    byDayDurations = map totalTimes byDay
+
+    -- total durations for the whole period
+    allDaysDurations :: [(Text, DiffTime)]
+    allDaysDurations =
+      let allTasks = nub $ map fst $ concat byDayDurations in
+      foreach allTasks $ \task ->
+      (task,) $ sum $ foreach byDayDurations $ \durations ->
+      lookupDef (fromInteger 0) task durations
+
+    -- split clocks
+    clocks :: [[(Text, (DiffTime, DiffTime))]]
     clocks = map allClocks byDay
 
     pic =
       D.vsep 5
       [ timelineDays params clocks
-      , taskList params (nub $ map fst $ concat byDay)
+      , taskList params allDaysDurations
       ]
 
 processTimeline :: (MonadThrow m) => TimelineParams -> Org -> m SVGImageReport
