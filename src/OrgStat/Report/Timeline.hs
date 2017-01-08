@@ -113,16 +113,33 @@ labelColour params _label = D.sRGB24 r g b
 timelineDay :: TimelineParams -> [(Text, (DiffTime, DiffTime))] -> D.Diagram B
 timelineDay params clocks =
     D.scaleUToY height $
+    (timeticks D.|||) $
     mconcat
       [ mconcat (map showClock clocks)
       , background
       ]
   where
     width = 140 * (totalHeight / height) * (params ^. tpColumnWidth)
+    ticksWidth = 20 * (totalHeight / height)
     height = 700 * (params ^. tpColumnHeight)
 
     totalHeight :: Double
     totalHeight = 24*60
+
+    timeticks :: D.Diagram B
+    timeticks =
+      mconcat $
+      foreach [(0::Int)..23] $ \hour ->
+      mconcat
+        [ D.alignedText 0.5 1 (show hour)
+          & D.font "DejaVu Sans"
+          & D.fontSize 8
+          & D.moveTo (D.p2 (0, -5))
+        , D.rect ticksWidth 1
+          & D.lw D.none
+        ]
+      & D.fc (D.sRGB24 150 150 150)
+      & D.moveTo (D.p2 (0, totalHeight - fromIntegral hour * 60))
 
     background :: D.Diagram B
     background =
@@ -149,7 +166,6 @@ timelineDay params clocks =
           ]
         & D.moveOriginTo (D.p2 (-w/2, h/2))
         & D.moveTo (D.p2 (0, totalHeight - fromInteger (diffTimeMinutes start)))
-
 -- timelines for several days, with top lists
 timelineDays
   :: TimelineParams
@@ -157,12 +173,12 @@ timelineDays
   -> [[(Text, DiffTime)]]
   -> D.Diagram B
 timelineDays params clocks topLists =
-    D.hsep 10 $
+    D.hcat $
     foreach (zip clocks topLists) $ \(dayClocks, topList) ->
-    D.vsep 5
-    [ timelineDay params dayClocks
-    , taskList params topList
-    ]
+      D.vsep 5
+      [ timelineDay params dayClocks
+      , taskList params topList
+      ]
 
 -- task list, with durations and colours
 taskList :: TimelineParams -> [(Text, DiffTime)] -> D.Diagram B
