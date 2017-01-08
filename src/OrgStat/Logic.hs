@@ -11,10 +11,9 @@ import           Data.List                   (notElem, nub, nubBy)
 import qualified Data.List.NonEmpty          as NE
 import qualified Data.Map                    as M
 import qualified Data.Text                   as T
-import           Data.Time                   (UTCTime (..), addDays, defaultTimeLocale,
-                                              formatTime, getCurrentTime,
-                                              getCurrentTimeZone, getZonedTime,
-                                              localTimeToUTC, toGregorian)
+import           Data.Time                   (LocalTime (..), TimeOfDay (..), addDays,
+                                              defaultTimeLocale, formatTime, getZonedTime,
+                                              toGregorian, zonedTimeToLocalTime)
 import           Data.Time.Calendar          (addGregorianMonthsRollOver)
 import           Data.Time.Calendar.WeekDate (toWeekDate)
 import           System.Directory            (createDirectoryIfMissing)
@@ -36,29 +35,29 @@ import           OrgStat.WorkMonad           (WorkM, wConfigFile)
 
 
 -- Converts config range to a pair of 'UTCTime', right bound not inclusive.
-convertRange :: (MonadIO m) => ConfRange -> m (UTCTime, UTCTime)
+convertRange :: (MonadIO m) => ConfRange -> m (LocalTime, LocalTime)
 convertRange range = case range of
     (ConfFromTo f t)  -> (,) <$> fromConfDate f <*> fromConfDate t
     (ConfBlockDay i) | i < 0 -> panic $ "ConfBlockDay i is <0: " <> show i
-    (ConfBlockDay 0) -> (,) <$> (utcFromDay <$> startOfDay) <*> curTime
+    (ConfBlockDay 0) -> (,) <$> (localFromDay <$> startOfDay) <*> curTime
     (ConfBlockDay i) -> do
         d <- (negate (i - 1) `addDays`) <$> startOfDay
-        pure $ utcFromDayPair ((negate 1) `addDays` d, d)
+        pure $ localFromDayPair ((negate 1) `addDays` d, d)
     (ConfBlockWeek i) | i < 0 -> panic $ "ConfBlockWeek i is <0: " <> show i
-    (ConfBlockWeek 0) -> (,) <$> (utcFromDay <$> startOfWeek) <*> curTime
+    (ConfBlockWeek 0) -> (,) <$> (localFromDay <$> startOfWeek) <*> curTime
     (ConfBlockWeek i) -> do
         d <- (negate (i - 1) `addWeeks`) <$> startOfWeek
-        pure $ utcFromDayPair ((negate 1) `addWeeks` d, d)
+        pure $ localFromDayPair ((negate 1) `addWeeks` d, d)
     (ConfBlockMonth i) | i < 0 -> panic $ "ConfBlockMonth i is <0: " <> show i
-    (ConfBlockMonth 0) -> (,) <$> (utcFromDay <$> startOfMonth) <*> curTime
+    (ConfBlockMonth 0) -> (,) <$> (localFromDay <$> startOfMonth) <*> curTime
     (ConfBlockMonth i) -> do
         d <- addGregorianMonthsRollOver (negate $ i-1) <$> startOfMonth
-        pure $ utcFromDayPair ((negate 1) `addGregorianMonthsRollOver` d, d)
+        pure $ localFromDayPair ((negate 1) `addGregorianMonthsRollOver` d, d)
   where
-    utcFromDay d = UTCTime d 0
-    utcFromDayPair = bimap utcFromDay utcFromDay
-    curTime = liftIO getCurrentTime
-    curDay = utctDay <$> curTime
+    localFromDay d = LocalTime d $ TimeOfDay 0 0 0
+    localFromDayPair = bimap localFromDay localFromDay
+    curTime = liftIO $ zonedTimeToLocalTime <$> getZonedTime
+    curDay = localDay <$> curTime
     addWeeks i d = (i*7) `addDays` d
     startOfDay = curDay
     startOfWeek = do
@@ -69,10 +68,8 @@ convertRange range = case range of
         d <- curDay
         let monthDate = pred $ view _3 $ toGregorian d
         pure $ fromIntegral (negate monthDate) `addDays` d
-    fromConfDate ConfNow       = liftIO getCurrentTime
-    fromConfDate (ConfLocal x) = do
-        tz <- liftIO getCurrentTimeZone
-        pure $ localTimeToUTC tz x
+    fromConfDate ConfNow       = curTime
+    fromConfDate (ConfLocal x) = pure x
 
 
 runOrgStat :: WorkM ()
@@ -99,8 +96,8 @@ runOrgStat = do
             withModifiers <- mergeClocks <$> applyMods crModifiers orgTop
             let timelineParamsFinal = timelineParams & tpColorSalt .~ confColorSalt
             logDebug $ "Launching timeline report with params: " <> show timelineParamsFinal
-            (from,to) <- convertRange timelineRange
-            res <- processTimeline timelineParamsFinal withModifiers (from,to)
+            fromto <- convertRange timelineRange
+            res <- processTimeline timelineParamsFinal withModifiers fromto
             logInfo $ "Generating report " <> crName <> "..."
             writeReport reportDir (T.unpack crName) res
   where

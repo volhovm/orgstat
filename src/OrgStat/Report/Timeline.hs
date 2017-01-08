@@ -19,9 +19,9 @@ import           Data.Colour.CIE      (luminance)
 import           Data.Default         (Default (..))
 import           Data.List            (lookup, nub)
 import qualified Data.Text            as T
-import           Data.Time            (Day, DiffTime, LocalTime (..), UTCTime (..),
-                                       addUTCTime, defaultTimeLocale, formatTime,
-                                       timeOfDayToTime)
+import           Data.Time            (Day, DiffTime, LocalTime (..), addUTCTime,
+                                       defaultTimeLocale, formatTime, localTimeToUTC,
+                                       timeOfDayToTime, utc, utcToLocalTime)
 import           Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude     as D
 import qualified Prelude
@@ -239,14 +239,15 @@ taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd label
       where
         (hours, minutes) = diffTimeMinutes time `divMod` 60
 
-timelineReport :: TimelineParams -> Org -> (UTCTime, UTCTime) -> SVGImageReport
+timelineReport :: TimelineParams -> Org -> (LocalTime, LocalTime) -> SVGImageReport
 timelineReport params org (from,to) = SVGImage pic
   where
     lookupDef :: Eq a => b -> a -> [(a, b)] -> b
     lookupDef d a xs = fromMaybe d $ lookup a xs
 
     -- period to show. Right border is -1min, we assume it's non-inclusive
-    daysToShow = [utctDay from .. utctDay ((negate 1) `addUTCTime` to)]
+    addLocalTime n a = utcToLocalTime utc $ n `addUTCTime` localTimeToUTC utc a
+    daysToShow = [localDay from .. localDay ((negate 120) `addLocalTime` to)]
 
     -- unfiltered leaves
     tasks :: [(Text, [Clock])]
@@ -286,5 +287,5 @@ timelineReport params org (from,to) = SVGImage pic
 
 processTimeline
     :: (MonadThrow m)
-    => TimelineParams -> Org -> (UTCTime, UTCTime) -> m SVGImageReport
+    => TimelineParams -> Org -> (LocalTime, LocalTime) -> m SVGImageReport
 processTimeline params org fromto = pure $ timelineReport params org fromto
