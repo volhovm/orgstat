@@ -18,7 +18,8 @@ import           Data.Default         (Default (..))
 import           Data.List            (lookup, nub)
 import qualified Data.Text            as T
 import           Data.Time            (Day, DiffTime, LocalTime (..), UTCTime (..),
-                                       addUTCTime, timeOfDayToTime)
+                                       addUTCTime, defaultTimeLocale, formatTime,
+                                       timeOfDayToTime)
 import           Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude     as D
 import qualified Prelude
@@ -111,8 +112,10 @@ labelColour params _label = D.sRGB24 r g b
     (r,g,b) = hashColour (params ^. tpColorSalt) _label
 
 -- timeline for a single day
-timelineDay :: TimelineParams -> [(Text, (DiffTime, DiffTime))] -> D.Diagram B
-timelineDay params clocks =
+timelineDay :: TimelineParams -> Day -> [(Text, (DiffTime, DiffTime))] -> D.Diagram B
+timelineDay params day clocks =
+    (D.strutY 5 D.===) $
+    (dateLabel D.===) $
     D.scaleUToY height $
     (timeticks D.|||) $
     mconcat
@@ -142,6 +145,16 @@ timelineDay params clocks =
       & D.fc (D.sRGB24 150 150 150)
       & D.moveTo (D.p2 (0, totalHeight - fromIntegral hour * 60))
 
+    dateLabel :: D.Diagram B
+    dateLabel =
+      mconcat
+      [ D.strutY 20
+      , D.alignedText 0 0.65 (formatTime defaultTimeLocale "%a, %d.%m.%Y" day)
+        & D.font "DejaVu Sans"
+        & D.fontSize 12
+        & D.moveTo (D.p2 (25, 0))
+      ]
+
     background :: D.Diagram B
     background =
       D.rect width totalHeight
@@ -170,14 +183,15 @@ timelineDay params clocks =
 -- timelines for several days, with top lists
 timelineDays
   :: TimelineParams
+  -> [Day]
   -> [[(Text, (DiffTime, DiffTime))]]
   -> [[(Text, DiffTime)]]
   -> D.Diagram B
-timelineDays params clocks topLists =
+timelineDays params days clocks topLists =
     D.hcat $
-    foreach (zip clocks topLists) $ \(dayClocks, topList) ->
+    foreach (days `zip` (clocks `zip` topLists)) $ \(day, (dayClocks, topList)) ->
       D.vsep 5
-      [ timelineDay params dayClocks
+      [ timelineDay params day dayClocks
       , taskList params topList
       ]
 
@@ -248,7 +262,7 @@ timelineReport params org (from,to) = SVGImage pic
               | otherwise = []
 
     pic =
-      D.vsep 30 $ [ timelineDays params clocks topLists ] ++ optLegend
+      D.vsep 30 $ [ timelineDays params daysToShow clocks topLists ] ++ optLegend
 
 processTimeline :: (MonadThrow m) => TimelineParams -> Org -> (UTCTime, UTCTime) -> m SVGImageReport
 processTimeline params org fromto = pure $ timelineReport params org fromto
