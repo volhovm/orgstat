@@ -161,7 +161,7 @@ timelineDay params clocks =
             & D.fontSize 10
             & D.moveTo (D.p2 (-w/2+10, 0))
           , D.rect w h
-            & D.lw (D.output 0.5)
+            & D.lw D.none
             & D.fc (labelColour params label)
           ]
         & D.moveOriginTo (D.p2 (-w/2, h/2))
