@@ -55,7 +55,7 @@ data ConfReportType = Timeline
     } deriving (Show)
 
 data ConfScope = ConfScope
-    { csName  :: Text -- default needs no name
+    { csName  :: Text              -- default is "default"
     , csPaths :: NonEmpty FilePath
     } deriving (Show)
 

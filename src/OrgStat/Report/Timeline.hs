@@ -17,7 +17,7 @@ import           Control.Lens         (makeLenses, (^.))
 import           Data.Default         (Default (..))
 import           Data.List            (lookup, nub)
 import qualified Data.Text            as T
-import           Data.Time            (Day, DiffTime, UTCTime (..), fromGregorian)
+import           Data.Time            (Day, DiffTime, UTCTime (..), addUTCTime)
 import           Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude     as D
 import qualified Prelude
@@ -204,16 +204,14 @@ taskList params labels = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
       where
         (hours, minutes) = diffTimeMinutes time `divMod` 60
 
-timelineReport :: TimelineParams -> Org -> SVGImageReport
-timelineReport params org = SVGImage pic
+timelineReport :: TimelineParams -> Org -> (UTCTime, UTCTime) -> SVGImageReport
+timelineReport params org (from,to) = SVGImage pic
   where
     lookupDef :: Eq a => b -> a -> [(a, b)] -> b
     lookupDef d a xs = fromMaybe d $ lookup a xs
 
-    -- period to show
-    daysToShow =
-      foreach [1..7] $ \day ->
-      fromGregorian 2017 1 day
+    -- period to show. Right border is -1min, we assume it's non-inclusive
+    daysToShow = [utctDay from .. utctDay ((negate 1) `addUTCTime` to)]
 
     -- unfiltered leaves
     tasks :: [(Text, [Clock])]
@@ -251,5 +249,5 @@ timelineReport params org = SVGImage pic
     pic =
       D.vsep 30 $ [ timelineDays params clocks topLists ] ++ optLegend
 
-processTimeline :: (MonadThrow m) => TimelineParams -> Org -> m SVGImageReport
-processTimeline params org = pure $ timelineReport params org
+processTimeline :: (MonadThrow m) => TimelineParams -> Org -> (UTCTime, UTCTime) -> m SVGImageReport
+processTimeline params org fromto = pure $ timelineReport params org fromto
