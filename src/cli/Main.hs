@@ -27,7 +27,7 @@ argsParser :: FilePath -> Parser Args
 argsParser homeDir =
     Args <$>
     strOption
-        (long "conf-path" <> metavar "FILEPATH" <> value (homeDir </> ".orgstat.conf") <>
+        (long "conf-path" <> metavar "FILEPATH" <> value (homeDir </> ".orgstat.yaml") <>
         help "Path to the configuration file") <*>
     switch
         (long "debug" <>
