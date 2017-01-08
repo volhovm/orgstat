@@ -6,7 +6,7 @@ module OrgStat.Logic
        ( runOrgStat
        ) where
 
-import           Control.Lens                (view, (.~), _2, _3)
+import           Control.Lens                (view, (.~), _3)
 import           Data.List                   (notElem, nub, nubBy)
 import qualified Data.List.NonEmpty          as NE
 import qualified Data.Map                    as M
@@ -37,22 +37,26 @@ import           OrgStat.WorkMonad           (WorkM, wConfigFile)
 convertRange :: (MonadIO m) => ConfRange -> m (UTCTime, UTCTime)
 convertRange range = case range of
     (ConfFromTo f t)  -> (,) <$> fromConfDate f <*> fromConfDate t
-    (ConfBlockDay i) | i <= 0 -> panic $ "ConfBlockDay i is <0: " <> show i
+    (ConfBlockDay i) | i < 0 -> panic $ "ConfBlockDay i is <0: " <> show i
+    (ConfBlockDay 0) -> (,) <$> (utcFromDay <$> startOfDay) <*> curTime
     (ConfBlockDay i) -> do
-        d <- (negate i `addDays`) <$> startOfDay
+        d <- (negate (i - 1) `addDays`) <$> startOfDay
         pure $ utcFromDayPair ((negate 1) `addDays` d, d)
-    (ConfBlockWeek i) | i <= 0 -> panic $ "ConfBlockWeek i is <0: " <> show i
+    (ConfBlockWeek i) | i < 0 -> panic $ "ConfBlockWeek i is <0: " <> show i
+    (ConfBlockWeek 0) -> (,) <$> (utcFromDay <$> startOfWeek) <*> curTime
     (ConfBlockWeek i) -> do
-        d <- (negate i `addWeeks`) <$> startOfWeek
+        d <- (negate (i - 1) `addWeeks`) <$> startOfWeek
         pure $ utcFromDayPair ((negate 1) `addWeeks` d, d)
-    (ConfBlockMonth i) | i <= 0 -> panic $ "ConfBlockMonth i is <0: " <> show i
+    (ConfBlockMonth i) | i < 0 -> panic $ "ConfBlockMonth i is <0: " <> show i
+    (ConfBlockMonth 0) -> (,) <$> (utcFromDay <$> startOfMonth) <*> curTime
     (ConfBlockMonth i) -> do
-        d <- addGregorianMonthsRollOver (negate i) <$> startOfMonth
+        d <- addGregorianMonthsRollOver (negate $ i-1) <$> startOfMonth
         pure $ utcFromDayPair ((negate 1) `addGregorianMonthsRollOver` d, d)
   where
     utcFromDay d = UTCTime d 0
     utcFromDayPair = bimap utcFromDay utcFromDay
-    curDay = liftIO $ utctDay <$> getCurrentTime
+    curTime = liftIO getCurrentTime
+    curDay = utctDay <$> curTime
     addWeeks i d = (i*7) `addDays` d
     startOfDay = curDay
     startOfWeek = do
@@ -61,7 +65,7 @@ convertRange range = case range of
         pure $ fromIntegral (negate weekDay) `addDays` d
     startOfMonth = do
         d <- curDay
-        let monthDate = pred $ view _2 $ toGregorian d
+        let monthDate = pred $ view _3 $ toGregorian d
         pure $ fromIntegral (negate monthDate) `addDays` d
     fromConfDate ConfNow     = liftIO getCurrentTime
     fromConfDate (ConfUTC x) = pure x
