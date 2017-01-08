@@ -46,7 +46,7 @@ data TimelineParams = TimelineParams
     } deriving (Show)
 
 instance Default TimelineParams where
-    def = TimelineParams 0 True 5 1 1 (0xff,0x00,0x00)
+    def = TimelineParams 0 True 5 1 1 (0xf2, 0xf2, 0xf2)
 
 makeLenses ''TimelineParams
 
@@ -115,6 +115,19 @@ sRGB24Tuple (a,b,c) = D.sRGB24 a b c
 labelColour :: TimelineParams -> Text -> D.Colour Double
 labelColour params _label = sRGB24Tuple $ hashColour (params ^. tpColorSalt) _label
 
+-- | Returns if the label is to be shown. Second param is font-related
+-- heuristic constant, third is length of interval.
+fitLabelHeight :: TimelineParams -> Double -> Double -> Bool
+fitLabelHeight params n h = h >= (params ^. tpColumnHeight) * n
+
+-- | Decides by <heuristic param n depending on font>, width of column
+-- and string, should it be truncated. And returns modified string.
+fitLabelWidth :: TimelineParams -> Double -> Text -> Text
+fitLabelWidth params n s =
+    if T.length s <= toTake then s else T.take toTake s <> ".."
+  where
+    toTake = floor $ n * ((params ^. tpColumnWidth) ** 1.2)
+
 -- timeline for a single day
 timelineDay :: TimelineParams -> Day -> [(Text, (DiffTime, DiffTime))] -> D.Diagram B
 timelineDay params day clocks =
@@ -172,18 +185,16 @@ timelineDay params day clocks =
       let
         w = width
         h = fromInteger $ diffTimeMinutes $ end - start
-      in
-        mconcat
-          [ D.alignedText 0 0.5 (T.unpack label)
-            & D.font "DejaVu Sans"
-            & D.fontSize 10
-            & D.moveTo (D.p2 (-w/2+10, 0))
-          , D.rect w h
-            & D.lw D.none
-            & D.fc (labelColour params label)
-          ]
-        & D.moveOriginTo (D.p2 (-w/2, h/2))
-        & D.moveTo (D.p2 (0, totalHeight - fromInteger (diffTimeMinutes start)))
+        label' = D.alignedText 0 0.5 (T.unpack $ fitLabelWidth params 21 label)
+               & D.font "DejaVu Sans"
+               & D.fontSize 10
+               & D.moveTo (D.p2 (-w/2+10, 0))
+        bgbox = D.rect w h
+                & D.lw D.none
+                & D.fc (labelColour params label)
+        box = mconcat $ bool [] [label'] (fitLabelHeight params 14 h) ++ [bgbox]
+      in box & D.moveOriginTo (D.p2 (-w/2, h/2))
+             & D.moveTo (D.p2 (0, totalHeight - fromInteger (diffTimeMinutes start)))
 -- timelines for several days, with top lists
 timelineDays
   :: TimelineParams
@@ -199,6 +210,8 @@ timelineDays params days clocks topLists =
       , taskList params topList
       ]
 
+
+
 -- task list, with durations and colours
 taskList :: TimelineParams -> [(Text, DiffTime)] -> D.Diagram B
 taskList params labels = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
@@ -213,7 +226,7 @@ taskList params labels = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
       , D.rect 12 12
         & D.fc (labelColour params label)
         & D.lw D.none
-      , D.alignedText 0 0.5 (T.unpack label)
+      , D.alignedText 0 0.5 (T.unpack $ fitLabelWidth params 18 label)
         & D.font "DejaVu Sans"
         & D.fontSize 10
       ]
