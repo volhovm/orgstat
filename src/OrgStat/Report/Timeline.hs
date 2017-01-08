@@ -141,9 +141,19 @@ timelineDay params clocks =
         & D.moveOriginTo (D.p2 (-w/2, h/2))
         & D.moveTo (D.p2 (0, totalHeight - fromInteger (diffTimeMinutes start)))
 
--- timelines for several days
-timelineDays :: TimelineParams -> [[(Text, (DiffTime, DiffTime))]] -> D.Diagram B
-timelineDays params times = D.hsep 10 $ map (timelineDay params) times
+-- timelines for several days, with top lists
+timelineDays
+  :: TimelineParams
+  -> [[(Text, (DiffTime, DiffTime))]]
+  -> [[(Text, DiffTime)]]
+  -> D.Diagram B
+timelineDays params clocks topLists =
+  D.hsep 10 $
+  foreach (zip clocks topLists) $ \(dayClocks, topList) ->
+  D.vsep 5
+  [ timelineDay params dayClocks
+  , taskList params topList
+  ]
 
 -- task list, with durations and colours
 taskList :: TimelineParams -> [(Text, DiffTime)] -> D.Diagram B
@@ -180,6 +190,8 @@ timelineReport params org = SVGImage pic
       foreach [1..7] $ \day ->
       fromGregorian 2017 1 day
 
+    topSize = 5
+
     -- unfiltered leaves
     tasks :: [(Text, [Clock])]
     tasks = orgToList org
@@ -204,9 +216,13 @@ timelineReport params org = SVGImage pic
     clocks :: [[(Text, (DiffTime, DiffTime))]]
     clocks = map allClocks byDay
 
+    -- top list for each day
+    topLists :: [[(Text, DiffTime)]]
+    topLists = map (take topSize . reverse . sortOn (\(_task, time) -> time)) byDayDurations
+
     pic =
-      D.vsep 5
-      [ timelineDays params clocks
+      D.vsep 30
+      [ timelineDays params clocks topLists
       , taskList params allDaysDurations
       ]
 
