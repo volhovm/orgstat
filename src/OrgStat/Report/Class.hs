@@ -16,7 +16,7 @@ class Report a where
     writeReport :: (MonadIO m) => FilePath -> a -> m ()
 
 instance Report SVGImageReport where
-    writeReport fp (SVGImage (width, height) diagram) =
+    writeReport fp (SVGImage diagram) =
         liftIO $ DB.renderSVG fp size diagram
       where
-        size = (D.mkSizeSpec (D.V2 (Just width) (Just height)))
+        size = D.dims2D (D.width diagram) (D.height diagram)

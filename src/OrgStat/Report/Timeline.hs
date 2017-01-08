@@ -143,7 +143,7 @@ taskList params labels = D.vsep 5 $ map oneTask labels
       ]
 
 timelineReport :: TimelineParams -> Org -> SVGImageReport
-timelineReport params org = SVGImage (width, height) pic
+timelineReport params org = SVGImage pic
   where
     daysToShow =
       foreach [1..7] $ \day ->
@@ -169,5 +169,5 @@ mm :: IO ()
 mm = do
     txt <- readFile "/home/zhenya/Dropbox/org/proj.org"
     let Right org = A.parseOnly (parseOrg ["!","&","+"]) txt
-    let SVGImage (width, height) pic = timelineReport def org
-    DB.renderSVG "./tmp/some.svg" (D.mkSizeSpec $ D.V2 (Just width) (Just height)) pic
+    let SVGImage pic = timelineReport def org
+    DB.renderSVG "./tmp/some.svg" (D.dims2D (D.width pic) (D.height pic)) pic
