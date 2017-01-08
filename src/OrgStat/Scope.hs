@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveGeneric   #-}
-{-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 -- | This module defines how report input is formed.
 
@@ -9,19 +10,17 @@ module OrgStat.Scope
        , isSubPath
        , existsPath
        , ScopeModifier (..)
-       , Scope (..)
-       , sRoot
-       , sModifiers
-       , fromScope
+       , applyModifiers
        ) where
 
 import qualified Base                 as Base
-import           Control.Lens         (Lens', makeLenses, to, view, (%~), (.~), (^.))
+import           Control.Lens         (Lens', each, to, view, (%~), (.~), (^.), (^..))
 import           Control.Monad.Except (throwError)
 import qualified Data.Text            as T
 import           Universum
 
-import           OrgStat.Ast          (Org, orgSubtrees, orgTitle)
+import           OrgStat.Ast          (Org, atDepth, orgClocks, orgSubtrees, orgTitle,
+                                       traverseTree)
 
 -- | Path in org AST is just a list of paths, head ~ closer to tree
 -- root.
@@ -39,6 +38,7 @@ isSubPath (AstPath l1) (AstPath l2) = l1 `isPrefixOf` l2
 
 -- | Lens to a org node at path.
 atPath :: AstPath -> Lens' Org (Maybe Org)
+atPath (AstPath []) f o = fromMaybe o <$> f (Just o)
 atPath (AstPath p) f o = atPathDo p o
   where
     atPathDo [] org = f Nothing $> org
@@ -78,13 +78,20 @@ data ModifierError
     -- ^ Modifier doesn't support this parameter
     deriving (Show,Typeable)
 
+instance Exception ModifierError
+
 -- | Applies modifier to org tree
 applyModifier :: ScopeModifier -> Org -> Either ModifierError Org
 applyModifier m@(ModPruneSubtree path depth) org = do
     unless (depth >= 0) $ throwError $ MEWrongParam m "Depth should be >= 0"
     unless (existsPath path org) $
         throwError $ MEWrongParam m $ "Path " <> show path <> " doesn't exist"
-    pure $ org & atPath path .~ Nothing
+    traceM "Applying modifiers"
+    let subclocks o' = o' & orgClocks .~ (concatMap (view orgClocks) $ o' ^.. traverseTree)
+                          & orgSubtrees .~ []
+    let pruneChildren o = o & atDepth depth %~ subclocks
+    traceM "Applied modifier"
+    pure $ org & atPath path %~ (\x -> maybe x (Just . pruneChildren) x)
 applyModifier m@(ModSelectSubtree path) org = do
     unless (existsPath path org) $
         throwError $ MEWrongParam m $ "Path " <> show path <> " doesn't exist"
@@ -93,33 +100,19 @@ applyModifier m@(ModSelectSubtree path) org = do
         org ^. atPath path
 applyModifier _ org = pure org -- TODO
 
-
--- | 'Scope' is just a list of trees, where functional units are
--- leaves. 'Scope' is thought to be a single unit for
--- plotting. Plotting timeline requires single scope. Plotting
--- activity report requires several scope -- each one represents
--- function. Top-level node represents, well, nothing, and her
--- children are files.
-data Scope = Scope
-  { _sRoot      :: Org
-  , _sModifiers :: [ScopeModifier] -- ^ Modifiers to apply
-  } deriving (Show)
-
-makeLenses ''Scope
-
 -- | Generates an org to be processed by report generators from 'Scope'.
-fromScope :: Scope -> Either ModifierError Org
-fromScope s = do
-    whenList addDelConflicts $ \(m1,m2) ->
-        throwError $ MEConflicting m1 m2 "Path of first modifier is subpath of second one"
-    foldrM applyModifier (s ^. sRoot) mods
+applyModifiers :: Org -> [ScopeModifier] -> Either ModifierError Org
+applyModifiers org s = do
+--    whenList addDelConflicts $ \(m1,m2) ->
+--        throwError $ MEConflicting m1 m2 "Path of first modifier is subpath of second one"
+    foldrM applyModifier org mods
   where
-    whenList ls foo = case ls of
-        []    -> pass
-        (h:_) -> foo h
-    addDelConflicts =
-        let addDelConflict (ModPruneSubtree a _) (ModSelectSubtree b) = a `isSubPath` b
-            addDelConflict _ _                                        = False
-        in filter (uncurry addDelConflict) modsPairs
-    modsPairs = [(a,b) | a <- mods, b <- mods, a < b]
-    mods = s ^. sModifiers . to sort
+--    whenList ls foo = case ls of
+--        []    -> pass
+--        (h:_) -> foo h
+--    addDelConflicts =
+--        let addDelConflict (ModPruneSubtree a _) (ModSelectSubtree b) = a `isSubPath` b
+--            addDelConflict _ _                                        = False
+--        in filter (uncurry addDelConflict) modsPairs
+--    modsPairs = [(a,b) | a <- mods, b <- mods, a < b]
+    mods = sort s

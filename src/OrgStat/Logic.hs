@@ -30,6 +30,7 @@ import           OrgStat.Config              (ConfDate (..), ConfRange (..),
                                               OrgStatConfig (..))
 import           OrgStat.IO                  (readConfig, readOrgFile)
 import           OrgStat.Report              (processTimeline, tpColorSalt, writeReport)
+import           OrgStat.Scope               (applyModifiers)
 import           OrgStat.Util                (fromJustM)
 import           OrgStat.WorkMonad           (WorkM, wConfigFile)
 
@@ -94,15 +95,17 @@ runOrgStat = do
                     map (\f -> fromMaybe (panic $ scopeNotFound (T.pack f) crName) $
                                M.lookup f allParsedOrgs)
                         scopeFiles
-            let orgTop =
-                    mergeClocks $
-                    Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) neededOrgs
+            let orgTop = Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) neededOrgs
+            withModifiers <- mergeClocks <$> applyMods crModifiers orgTop
             let timelineParamsFinal = timelineParams & tpColorSalt .~ confColorSalt
             (from,to) <- convertRange timelineRange
-            res <- processTimeline timelineParamsFinal orgTop (from,to)
+            res <- processTimeline timelineParamsFinal withModifiers (from,to)
             logInfo $ "Generating report " <> crName <> "..."
             writeReport reportDir (T.unpack crName) res
   where
+    applyMods mods o = case applyModifiers o mods of
+        Left k  -> throwM k
+        Right r -> pure r
     scopeNotFound scope report =
         mconcat ["Scope ", scope, " is requested for config report ",
                  report, ", but is not present in scopes section"]

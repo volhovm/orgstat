@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes      #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- | Abstract syntax tree for org.
@@ -10,13 +11,19 @@ module OrgStat.Ast
        , orgClocks
        , orgSubtrees
        , fmapOrgLens
+       , traverseTree
+       , atDepth
        , mergeClocks
        ) where
 
-import           Control.Lens (ASetter', makeLenses, (%~))
+import           Control.Lens (ASetter', Traversal', makeLenses, (%~), (.~), (^.))
 import           Data.Time    (LocalTime, diffUTCTime, localTimeToUTC, utc)
 
 import           Universum
+
+----------------------------------------------------------------------------
+-- Types
+----------------------------------------------------------------------------
 
 -- | Org clock representation -- a pair of time in UTC. Should be
 -- local time in fact, but we'll assume that UTC timestamps support in
@@ -39,17 +46,49 @@ data Org = Org
 
 makeLenses ''Org
 
+----------------------------------------------------------------------------
+-- Helpers and lenses
+----------------------------------------------------------------------------
+
+-- | Functor-like 'fmap' on field chosen by lens.
 fmapOrgLens :: ASetter' Org a -> (a -> a) -> Org -> Org
 fmapOrgLens l f o = o & l %~ f & orgSubtrees %~ map (fmapOrgLens l f)
+
+-- | Traverses node and subnodes, all recursively
+traverseTree :: Traversal' Org Org
+traverseTree f o = o'
+  where
+    o' = liftA2 (\org x -> org & orgSubtrees .~ x) (f o) traversedChildren
+    traversedChildren = traverse (traverseTree f) $ o ^. orgSubtrees
+
+atDepth :: Int -> Traversal' Org Org
+atDepth i _ o | i < 0 = pure o
+atDepth 0 f o = f o
+atDepth n f o =
+    (\x -> o & orgSubtrees .~ x) <$> traverse (atDepth (n-1) f) (o ^. orgSubtrees)
 
 -- | Merges task clocks that have less then 2m delta between them into
 -- one.
 mergeClocks :: Org -> Org
 mergeClocks = fmapOrgLens orgClocks (mergeClocksDo . sort)
   where
+    toUTC = localTimeToUTC utc
     mergeClocksDo [] = []
     mergeClocksDo [x] = [x]
     mergeClocksDo (a:b:xs)
-        | diffUTCTime (localTimeToUTC utc (cFrom b)) (localTimeToUTC utc (cTo a)) < 2*60 =
+        | toUTC (cFrom b) `diffUTCTime ` toUTC (cTo a) < 2*60 =
           Clock (cFrom a) (cTo b) : mergeClocksDo xs
         | otherwise = a : mergeClocksDo (b:xs)
+
+----------------------------------------------------------------------------
+-- For testing
+----------------------------------------------------------------------------
+
+testOrg7 = Org "kek7" [] [] []
+testOrg6 = Org "kek6" [] [] []
+testOrg4 = Org "kek4" [] [] [testOrg7]
+testOrg5 = Org "kek5" [] [] []
+testOrg1 = Org "kek1" [] [] []
+testOrg2 = Org "kek2" [] [] [testOrg5, testOrg6]
+testOrg3 = Org "kek3" [] [] [testOrg4]
+testOrg0 = Org "kek0" [] [] [testOrg1, testOrg2, testOrg3]

@@ -76,10 +76,8 @@ data OrgStatConfig = OrgStatConfig
     } deriving (Show)
 
 instance FromJSON AstPath where
-    parseJSON (String s)
-        | null s = fail "AstPath FromJson: empty string"
-        | otherwise = pure $ AstPath $ T.splitOn "/" s
-    parseJSON invalid = typeMismatch "AstPath" invalid
+    parseJSON (String s) = pure $ AstPath $ filter (not . T.null) $ T.splitOn "/" s
+    parseJSON invalid    = typeMismatch "AstPath" invalid
 
 instance FromJSON ScopeModifier where
     parseJSON (Object v) = do
