@@ -23,7 +23,7 @@ import           Data.Time.LocalTime     (ZonedTime)
 import           Universum
 
 import           OrgStat.Report.Timeline (TimelineParams, tpColumnHeight, tpColumnWidth,
-                                          tpLegend, tpTopDays)
+                                          tpLegend, tpTopDay)
 import           OrgStat.Scope           (AstPath (..), ScopeModifier (..))
 import           OrgStat.Util            ((??~))
 
@@ -107,11 +107,11 @@ instance FromJSON ConfRange where
 instance FromJSON TimelineParams where
     parseJSON (Object v) = do
         legend <- v .:? "legend"
-        topDays <- v .:? "topDays"
+        topDay <- v .:? "topDay"
         colWidth <- v .:? "colWidth"
         colHeight <- v .:? "colHeight"
         pure $ def & tpLegend ??~ legend
-                   & tpTopDays ??~ topDays
+                   & tpTopDay ??~ topDay
                    & tpColumnWidth ??~ colWidth
                    & tpColumnHeight ??~ colHeight
     parseJSON invalid    = typeMismatch "TimelineParams" invalid

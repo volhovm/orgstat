@@ -6,7 +6,7 @@ module OrgStat.Report.Timeline
        ( TimelineParams (..)
        , tpColorSalt
        , tpLegend
-       , tpTopDays
+       , tpTopDay
        , tpColumnWidth
        , tpColumnHeight
 
@@ -36,7 +36,7 @@ import           OrgStat.Util         (hashColour)
 data TimelineParams = TimelineParams
     { _tpColorSalt    :: Int    -- ^ Salt added when getting color out of task name.
     , _tpLegend       :: Bool   -- ^ Include map legend?
-    , _tpTopDays      :: Int    -- ^ How many items to include in top day (under column)
+    , _tpTopDay       :: Int    -- ^ How many items to include in top day (under column)
     , _tpColumnWidth  :: Double -- ^ Coeff
     , _tpColumnHeight :: Double -- ^ Coeff
     } deriving (Show)
@@ -228,7 +228,7 @@ timelineReport params org = SVGImage pic
     -- top list for each day
     topLists :: [[(Text, DiffTime)]]
     topLists =
-        map (take (params ^. tpTopDays) . reverse . sortOn (\(_task, time) -> time))
+        map (take (params ^. tpTopDay) . reverse . sortOn (\(_task, time) -> time))
         byDayDurations
 
     optLegend | params ^. tpLegend = [taskList params allDaysDurations]
