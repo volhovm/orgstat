@@ -10,9 +10,7 @@ import           Control.Exception    (Exception)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.OrgMode.Parse   as OP
 import qualified Data.Text            as T
-import           Data.Time            (LocalTime (..), TimeOfDay (..), TimeZone,
-                                       UTCTime (..), fromGregorian, getCurrentTimeZone,
-                                       localTimeToUTC, secondsToDiffTime)
+import           Data.Time            (LocalTime (..), TimeOfDay (..), fromGregorian)
 import           Data.Time.Calendar   ()
 import           Universum
 
