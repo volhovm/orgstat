@@ -20,7 +20,8 @@ import           OrgStat.Config      (ConfReport (..), ConfReportType (..),
                                       ConfScope (..), ConfigException (..),
                                       OrgStatConfig (..))
 import           OrgStat.IO          (readConfig, readOrgFile)
-import           OrgStat.Report      (processTimeline, writeReport)
+import           OrgStat.Report      (processTimeline, tpColorSalt, tpColumnWidth,
+                                      writeReport)
 import           OrgStat.Util        (fromJustM)
 import           OrgStat.WorkMonad   (WorkM, wConfigFile)
 
@@ -38,15 +39,17 @@ runOrgStat = do
             fromJustM (throwLogic $ scopeNotFound scopeName reportName) $
             pure $ find ((== scopeName) . csName) confScopes
     forM_ confReports $ \ConfReport{..} -> case crType of
-        Timeline _range scopeName -> do
+        Timeline{..} -> do
             logDebug $ "Processing report " <> crName
-            scopeFiles <- getScope scopeName crName
+            scopeFiles <- getScope timelineScope crName
             parsedOrgs <-
                 mapM (readOrgFile confTodoKeywords) (NE.toList $ csPaths scopeFiles)
             let orgTop =
                     mergeClocks $
                     Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) parsedOrgs
-            res <- processTimeline def orgTop
+                timelineParams = def & tpColorSalt .~ confColorSalt
+                                     & tpColumnWidth .~ timelineWidthCoeff
+            res <- processTimeline timelineParams orgTop
             logInfo $ "Generating report " <> crName <> "..."
             writeReport reportDir (T.unpack crName) res
   where

@@ -10,20 +10,15 @@ module OrgStat.Report.Timeline
        , tpColumnWidth
 
        , processTimeline
-
-       , mm
        ) where
 
 import           Control.Lens         (makeLenses, (^.))
-import qualified Data.Attoparsec.Text as A
 import           Data.Default         (Default (..))
 import           Data.List            (lookup, nub)
 import qualified Data.Text            as T
 import           Data.Time            (Day, DiffTime, UTCTime (..), fromGregorian)
 import           Diagrams.Backend.SVG (B)
-import qualified Diagrams.Backend.SVG as DB
 import qualified Diagrams.Prelude     as D
-import           OrgStat.Parser       (parseOrg)
 import qualified Prelude
 import           Text.Printf          (printf)
 import           Universum
@@ -117,13 +112,13 @@ labelColour params _label = D.sRGB24 r g b
 -- timeline for a single day
 timelineDay :: TimelineParams -> [(Text, (DiffTime, DiffTime))] -> D.Diagram B
 timelineDay params clocks =
-  D.scaleUToY height $
-  mconcat
-    [ mconcat (map showClock clocks)
-    , background
-    ]
+    D.scaleUToY height $
+    mconcat
+      [ mconcat (map showClock clocks)
+      , background
+      ]
   where
-    width = 140 * (totalHeight / height)
+    width = 140 * (totalHeight / height) * (params ^. tpColumnWidth)
     height = 700
 
     totalHeight :: Double
@@ -162,12 +157,12 @@ timelineDays
   -> [[(Text, DiffTime)]]
   -> D.Diagram B
 timelineDays params clocks topLists =
-  D.hsep 10 $
-  foreach (zip clocks topLists) $ \(dayClocks, topList) ->
-  D.vsep 5
-  [ timelineDay params dayClocks
-  , taskList params topList
-  ]
+    D.hsep 10 $
+    foreach (zip clocks topLists) $ \(dayClocks, topList) ->
+    D.vsep 5
+    [ timelineDay params dayClocks
+    , taskList params topList
+    ]
 
 -- task list, with durations and colours
 taskList :: TimelineParams -> [(Text, DiffTime)] -> D.Diagram B
@@ -175,7 +170,7 @@ taskList params labels = D.vsep 5 $ map oneTask labels
   where
     oneTask :: (Text, DiffTime) -> D.Diagram B
     oneTask (label, time) =
-      D.hsep 5
+      D.hsep 3
       [ D.alignedText 1 0.5 (showTime time)
         & D.font "DejaVu Sans"
         & D.fontSize 10
@@ -204,8 +199,6 @@ timelineReport params org = SVGImage pic
       foreach [1..7] $ \day ->
       fromGregorian 2017 1 day
 
-    topSize = 5
-
     -- unfiltered leaves
     tasks :: [(Text, [Clock])]
     tasks = orgToList org
@@ -232,21 +225,18 @@ timelineReport params org = SVGImage pic
 
     -- top list for each day
     topLists :: [[(Text, DiffTime)]]
-    topLists = map (take topSize . reverse . sortOn (\(_task, time) -> time)) byDayDurations
+    topLists =
+        map (take (params ^. tpTopDay) . reverse . sortOn (\(_task, time) -> time))
+        byDayDurations
+
+    optLegend | params ^. tpLegend = [taskList params allDaysDurations]
+              | otherwise = []
 
     pic =
-      D.vsep 30
-      [ timelineDays params clocks topLists
-      , taskList params allDaysDurations
-      ]
+      D.vsep 30 $
+      [ mempty
+      , timelineDays params clocks topLists
+      ] ++ optLegend
 
 processTimeline :: (MonadThrow m) => TimelineParams -> Org -> m SVGImageReport
 processTimeline params org = pure $ timelineReport params org
-
--- test
-mm :: IO ()
-mm = do
-    txt <- readFile "/home/volhovm/org/study.org"
-    let Right org = A.parseOnly (parseOrg ["TODO", "STARTED", "WAITING", "CANCELED", "DONE"]) txt
-    let SVGImage pic = timelineReport def org
-    DB.renderSVG "./some.svg" (D.dims2D (D.width pic) (D.height pic)) pic

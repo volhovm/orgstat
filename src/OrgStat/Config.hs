@@ -43,7 +43,11 @@ data ConfRange
     | ConfBlockMonth Int
     deriving (Show)
 
-data ConfReportType = Timeline ConfRange Text deriving (Show)
+data ConfReportType = Timeline
+    { timelineRange      :: ConfRange
+    , timelineScope      :: Text
+    , timelineWidthCoeff :: Double
+    } deriving (Show)
 
 data ConfScope = ConfScope
     { csName  :: Text -- default needs no name
@@ -61,6 +65,7 @@ data OrgStatConfig = OrgStatConfig
     , confReports      :: [ConfReport]
     , confTodoKeywords :: [Text]
     , confOutputDir    :: FilePath -- default is "./orgstat"
+    , confColorSalt    :: Int
     } deriving (Show)
 
 instance FromJSON AstPath where
@@ -98,7 +103,9 @@ instance FromJSON ConfReportType where
     parseJSON (Object v) = do
         v .: "type" >>= \case
             (String "timeline") ->
-                Timeline <$> v .: "range" <*> v .:? "scope" .!= "default"
+                Timeline <$> v .: "range"
+                         <*> v .:? "scope" .!= "default"
+                         <*> v .:? "columnWidth" .!= 1
             other -> fail $ "Unsupported scope modifier type: " ++ show other
     parseJSON invalid    = typeMismatch "ConfReportType" invalid
 
@@ -120,4 +127,5 @@ instance FromJSON OrgStatConfig where
                       <*> v .: "reports"
                       <*> v .:? "todoKeywords" .!= []
                       <*> v .:? "output" .!= "./orgstat"
+                      <*> v .:? "colorSalt" .!= 0
     parseJSON invalid    = typeMismatch "ConfReport" invalid
