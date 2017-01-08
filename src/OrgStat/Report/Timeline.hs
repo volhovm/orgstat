@@ -15,6 +15,7 @@ module OrgStat.Report.Timeline
        ) where
 
 import           Control.Lens         (makeLenses, (^.))
+import           Data.Colour.CIE      (luminance)
 import           Data.Default         (Default (..))
 import           Data.List            (lookup, nub)
 import qualified Data.Text            as T
@@ -180,18 +181,22 @@ timelineDay params day clocks =
       & D.moveOriginTo (D.p2 (-width/2, totalHeight/2))
       & D.moveTo (D.p2 (0, totalHeight))
 
+    contrastFrom c = if luminance c < 0.1 then D.sRGB24 224 224 224 else D.black
+
     showClock :: (Text, (DiffTime, DiffTime)) -> D.Diagram B
     showClock (label, (start, end)) =
       let
         w = width
         h = fromInteger $ diffTimeMinutes $ end - start
+        bgboxColour = labelColour params label
+        bgbox = D.rect w h
+                & D.lw D.none
+                & D.fc bgboxColour
         label' = D.alignedText 0 0.5 (T.unpack $ fitLabelWidth params 21 label)
                & D.font "DejaVu Sans"
                & D.fontSize 10
+               & D.fc (contrastFrom bgboxColour)
                & D.moveTo (D.p2 (-w/2+10, 0))
-        bgbox = D.rect w h
-                & D.lw D.none
-                & D.fc (labelColour params label)
         box = mconcat $ bool [] [label'] (fitLabelHeight params 14 h) ++ [bgbox]
       in box & D.moveOriginTo (D.p2 (-w/2, h/2))
              & D.moveTo (D.p2 (0, totalHeight - fromInteger (diffTimeMinutes start)))
@@ -209,8 +214,6 @@ timelineDays params days clocks topLists =
       [ timelineDay params day dayClocks
       , taskList params topList
       ]
-
-
 
 -- task list, with durations and colours
 taskList :: TimelineParams -> [(Text, DiffTime)] -> D.Diagram B

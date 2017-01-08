@@ -28,6 +28,7 @@ library
                      , attoparsec
                      , base >=4.9 && <4.10
                      , bytestring
+                     , colour >= 2.3.3
                      , containers >= 0.5.7.1
                      , data-default >= 0.7.1.1
                      , diagrams-lib
