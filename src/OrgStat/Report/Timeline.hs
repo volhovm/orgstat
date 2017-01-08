@@ -148,8 +148,6 @@ timelineReport params org = SVGImage pic
     daysToShow =
       foreach [1..7] $ \day ->
       fromGregorian 2017 1 day
-    width = D.width pic
-    height = D.height pic
 
     tasks = orgToList org
     byDay = selectDays daysToShow tasks
