@@ -48,7 +48,7 @@ hashColour :: (Hashable a) => Int -> a -> (Word8, Word8, Word8)
 hashColour salt item = colours !! (hashWithSalt salt item `mod` length colours)
   where
     broken = panic "Util#hashColour is broken"
-    range = [-5,-3,0,3,5]
+    range = [-5,0,5]
     ac :: Word8 -> Integer -> Word8
     ac a b = fromIntegral $ (fromIntegral a) + b `mod` 255
     colours = nub $ concatMap
