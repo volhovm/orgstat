@@ -182,7 +182,7 @@ timelineDays params clocks topLists =
 
 -- task list, with durations and colours
 taskList :: TimelineParams -> [(Text, DiffTime)] -> D.Diagram B
-taskList params labels = D.vsep 5 $ map oneTask labels
+taskList params labels = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
   where
     oneTask :: (Text, DiffTime) -> D.Diagram B
     oneTask (label, time) =
