@@ -212,12 +212,12 @@ timelineDays params days clocks topLists =
     foreach (days `zip` (clocks `zip` topLists)) $ \(day, (dayClocks, topList)) ->
       D.vsep 5
       [ timelineDay params day dayClocks
-      , taskList params topList
+      , taskList params topList True
       ]
 
 -- task list, with durations and colours
-taskList :: TimelineParams -> [(Text, DiffTime)] -> D.Diagram B
-taskList params labels = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
+taskList :: TimelineParams -> [(Text, DiffTime)] -> Bool -> D.Diagram B
+taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
   where
     oneTask :: (Text, DiffTime) -> D.Diagram B
     oneTask (label, time) =
@@ -229,7 +229,7 @@ taskList params labels = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
       , D.rect 12 12
         & D.fc (labelColour params label)
         & D.lw D.none
-      , D.alignedText 0 0.5 (T.unpack $ fitLabelWidth params 18 label)
+      , D.alignedText 0 0.5 (T.unpack $ bool label (fitLabelWidth params 18 label) fit)
         & D.font "DejaVu Sans"
         & D.fontSize 10
       ]
@@ -278,11 +278,13 @@ timelineReport params org (from,to) = SVGImage pic
         map (take (params ^. tpTopDay) . reverse . sortOn (\(_task, time) -> time))
         byDayDurations
 
-    optLegend | params ^. tpLegend = [taskList params allDaysDurations]
+    optLegend | params ^. tpLegend = [taskList params allDaysDurations False]
               | otherwise = []
 
     pic =
       D.vsep 30 $ [ timelineDays params daysToShow clocks topLists ] ++ optLegend
 
-processTimeline :: (MonadThrow m) => TimelineParams -> Org -> (UTCTime, UTCTime) -> m SVGImageReport
+processTimeline
+    :: (MonadThrow m)
+    => TimelineParams -> Org -> (UTCTime, UTCTime) -> m SVGImageReport
 processTimeline params org fromto = pure $ timelineReport params org fromto
