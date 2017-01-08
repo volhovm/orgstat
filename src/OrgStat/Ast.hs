@@ -9,10 +9,12 @@ module OrgStat.Ast
        , orgTags
        , orgClocks
        , orgSubtrees
+       , fmapOrgLens
+       , mergeClocks
        ) where
 
-import           Control.Lens    (makeLenses)
-import           Data.Time.Clock (UTCTime)
+import           Control.Lens    (ASetter', makeLenses, (%~))
+import           Data.Time.Clock (UTCTime, diffUTCTime)
 
 import           Universum
 
@@ -23,7 +25,7 @@ import           Universum
 data Clock = Clock
     { cFrom :: UTCTime
     , cTo   :: UTCTime
-    } deriving (Show,Eq)
+    } deriving (Show,Eq,Ord)
 
 -- | Main datatype of org AST. It may contain some metadata if needed
 -- (e.g. current node depth, children number etc). Content of headers
@@ -36,3 +38,18 @@ data Org = Org
     } deriving (Show,Eq)
 
 makeLenses ''Org
+
+fmapOrgLens :: ASetter' Org a -> (a -> a) -> Org -> Org
+fmapOrgLens l f o = o & l %~ f & orgSubtrees %~ map (fmapOrgLens l f)
+
+-- | Merges task clocks that have less then 5m delta between them into
+-- one.
+mergeClocks :: Org -> Org
+mergeClocks = fmapOrgLens orgClocks (mergeClocksDo . sort)
+  where
+    mergeClocksDo [] = []
+    mergeClocksDo [x] = [x]
+    mergeClocksDo (a:b:xs)
+        | diffUTCTime (cFrom b) (cTo a) < 5 =
+          Clock (cFrom a) (cTo b) : mergeClocksDo xs
+        | otherwise = a : mergeClocksDo (b:xs)

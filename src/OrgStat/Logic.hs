@@ -15,7 +15,7 @@ import           System.FilePath     ((</>))
 import           System.Wlog         (logDebug, logInfo)
 import           Universum
 
-import           OrgStat.Ast         (Org (..), orgTitle)
+import           OrgStat.Ast         (Org (..), mergeClocks, orgTitle)
 import           OrgStat.Config      (ConfReport (..), ConfReportType (..),
                                       ConfScope (..), ConfigException (..),
                                       OrgStatConfig (..))
@@ -43,7 +43,9 @@ runOrgStat = do
             scopeFiles <- getScope scopeName crName
             parsedOrgs <-
                 mapM (readOrgFile confTodoKeywords) (NE.toList $ csPaths scopeFiles)
-            let orgTop = Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) parsedOrgs
+            let orgTop =
+                    mergeClocks $
+                    Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) parsedOrgs
             res <- processTimeline def orgTop
             logInfo $ "Generating report " <> crName <> "..."
             writeReport reportDir (T.unpack crName) res
