@@ -13,8 +13,8 @@ module OrgStat.Ast
        , mergeClocks
        ) where
 
-import           Control.Lens    (ASetter', makeLenses, (%~))
-import           Data.Time.Clock (UTCTime, diffUTCTime)
+import           Control.Lens (ASetter', makeLenses, (%~))
+import           Data.Time    (LocalTime, diffUTCTime, localTimeToUTC, utc)
 
 import           Universum
 
@@ -23,8 +23,8 @@ import           Universum
 -- org will be added at some point. For now all tags are to be read in
 -- local time.
 data Clock = Clock
-    { cFrom :: UTCTime
-    , cTo   :: UTCTime
+    { cFrom :: LocalTime
+    , cTo   :: LocalTime
     } deriving (Show,Eq,Ord)
 
 -- | Main datatype of org AST. It may contain some metadata if needed
@@ -42,7 +42,7 @@ makeLenses ''Org
 fmapOrgLens :: ASetter' Org a -> (a -> a) -> Org -> Org
 fmapOrgLens l f o = o & l %~ f & orgSubtrees %~ map (fmapOrgLens l f)
 
--- | Merges task clocks that have less then 1m delta between them into
+-- | Merges task clocks that have less then 2m delta between them into
 -- one.
 mergeClocks :: Org -> Org
 mergeClocks = fmapOrgLens orgClocks (mergeClocksDo . sort)
@@ -50,6 +50,6 @@ mergeClocks = fmapOrgLens orgClocks (mergeClocksDo . sort)
     mergeClocksDo [] = []
     mergeClocksDo [x] = [x]
     mergeClocksDo (a:b:xs)
-        | diffUTCTime (cFrom b) (cTo a) <= 1 =
+        | diffUTCTime (localTimeToUTC utc (cFrom b)) (localTimeToUTC utc (cTo a)) < 2*60 =
           Clock (cFrom a) (cTo b) : mergeClocksDo xs
         | otherwise = a : mergeClocksDo (b:xs)

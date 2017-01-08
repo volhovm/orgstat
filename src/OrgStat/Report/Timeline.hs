@@ -17,7 +17,8 @@ import           Control.Lens         (makeLenses, (^.))
 import           Data.Default         (Default (..))
 import           Data.List            (lookup, nub)
 import qualified Data.Text            as T
-import           Data.Time            (Day, DiffTime, UTCTime (..), addUTCTime)
+import           Data.Time            (Day, DiffTime, LocalTime (..), UTCTime (..),
+                                       addUTCTime, timeOfDayToTime)
 import           Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude     as D
 import qualified Prelude
@@ -66,10 +67,10 @@ selectDays days tasks =
   where
     selectDay :: Day -> [Clock] -> [(DiffTime, DiffTime)]
     selectDay day clocks = do
-        Clock (UTCTime dFrom tFrom) (UTCTime dTo tTo) <- clocks
+        Clock (LocalTime dFrom tFrom) (LocalTime dTo tTo) <- clocks
         guard $ any (== day) [dFrom, dTo]
-        let tFrom' = if dFrom == day then tFrom else fromInteger 0
-        let tTo'   = if dTo   == day then tTo   else fromInteger (24*60*60)
+        let tFrom' = if dFrom == day then timeOfDayToTime tFrom else fromInteger 0
+        let tTo'   = if dTo   == day then timeOfDayToTime tTo   else fromInteger (24*60*60)
         pure (tFrom', tTo')
 
 -- total time for each task

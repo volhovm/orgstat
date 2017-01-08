@@ -10,8 +10,10 @@ import           Control.Exception    (Exception)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.OrgMode.Parse   as OP
 import qualified Data.Text            as T
-import           Data.Time.Calendar   (fromGregorian)
-import           Data.Time.Clock      (UTCTime (..), secondsToDiffTime)
+import           Data.Time            (LocalTime (..), TimeOfDay (..), TimeZone,
+                                       UTCTime (..), fromGregorian, getCurrentTimeZone,
+                                       localTimeToUTC, secondsToDiffTime)
+import           Data.Time.Calendar   ()
 import           Universum
 
 import           OrgStat.Ast          (Clock (..), Org (..))
@@ -69,19 +71,19 @@ parseOrg todoKeywords = convertDocument <$> OP.parseDocument todoKeywords
     convertClock _                                                 = Nothing
 
     -- Nothing for DateTime without time-of-day
-    convertDateTime :: OP.DateTime -> Maybe UTCTime
+    convertDateTime :: OP.DateTime -> Maybe LocalTime
     convertDateTime
         OP.DateTime
           { yearMonthDay = OP.YMD' (OP.YearMonthDay year month day)
           , hourMinute = Just (hour, minute)
           }
-      = Just $ UTCTime
+      = Just $ LocalTime
           (fromGregorian (toInteger year) month day)
-          (secondsToDiffTime $ toInteger $ 60*(60*hour + minute))
+          (TimeOfDay hour minute 0)
     convertDateTime _ = Nothing
 
 -- Throw parsing exception if it can't be parsed (use Control.Monad.Catch#throwM)
-runParser :: (MonadThrow m) => [Text] -> Text -> m Org
+runParser :: (MonadIO m, MonadThrow m) => [Text] -> Text -> m Org
 runParser todoKeywords t =
     case A.parseOnly (parseOrg todoKeywords) t of
       Left err  -> throwM $ ParsingException $ T.pack err
