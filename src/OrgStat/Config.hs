@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -11,16 +12,20 @@ module OrgStat.Config
        , OrgStatConfig (..)
        ) where
 
-import           Data.Aeson          (FromJSON (..), Value (Object, String), (.!=), (.:),
-                                      (.:?))
-import           Data.Aeson.Types    (typeMismatch)
-import           Data.List.NonEmpty  (NonEmpty)
-import qualified Data.Text           as T
-import           Data.Time.Format    (defaultTimeLocale, parseTimeM)
-import           Data.Time.LocalTime (ZonedTime)
+import           Data.Aeson              (FromJSON (..), Value (Object, String), (.!=),
+                                          (.:), (.:?))
+import           Data.Aeson.Types        (typeMismatch)
+import           Data.Default            (def)
+import           Data.List.NonEmpty      (NonEmpty)
+import qualified Data.Text               as T
+import           Data.Time.Format        (defaultTimeLocale, parseTimeM)
+import           Data.Time.LocalTime     (ZonedTime)
 import           Universum
 
-import           OrgStat.Scope       (AstPath (..), ScopeModifier (..))
+import           OrgStat.Report.Timeline (TimelineParams, tpColumnHeight, tpColumnWidth,
+                                          tpLegend, tpTopDays)
+import           OrgStat.Scope           (AstPath (..), ScopeModifier (..))
+import           OrgStat.Util            ((??~))
 
 -- | Exception type for everything bad that happens with config,
 -- starting from parsing to logic errors.
@@ -44,9 +49,9 @@ data ConfRange
     deriving (Show)
 
 data ConfReportType = Timeline
-    { timelineRange      :: ConfRange
-    , timelineScope      :: Text
-    , timelineWidthCoeff :: Double
+    { timelineRange  :: ConfRange
+    , timelineScope  :: Text
+    , timelineParams :: TimelineParams
     } deriving (Show)
 
 data ConfScope = ConfScope
@@ -99,13 +104,25 @@ instance FromJSON ConfRange where
     parseJSON (Object v)       = ConfFromTo <$> v .: "from" <*> v .: "to"
     parseJSON invalid          = typeMismatch "ConfRange" invalid
 
-instance FromJSON ConfReportType where
+instance FromJSON TimelineParams where
     parseJSON (Object v) = do
+        legend <- v .:? "legend"
+        topDays <- v .:? "topDays"
+        colWidth <- v .:? "colWidth"
+        colHeight <- v .:? "colHeight"
+        pure $ def & tpLegend ??~ legend
+                   & tpTopDays ??~ topDays
+                   & tpColumnWidth ??~ colWidth
+                   & tpColumnHeight ??~ colHeight
+    parseJSON invalid    = typeMismatch "TimelineParams" invalid
+
+instance FromJSON ConfReportType where
+    parseJSON o@(Object v) = do
         v .: "type" >>= \case
             (String "timeline") ->
                 Timeline <$> v .: "range"
                          <*> v .:? "scope" .!= "default"
-                         <*> v .:? "columnWidth" .!= 1
+                         <*> parseJSON o
             other -> fail $ "Unsupported scope modifier type: " ++ show other
     parseJSON invalid    = typeMismatch "ConfReportType" invalid
 

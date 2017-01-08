@@ -5,7 +5,6 @@ module OrgStat.Logic
        ) where
 
 import           Control.Lens        (view, (.~))
-import           Data.Default        (def)
 import qualified Data.List.NonEmpty  as NE
 import qualified Data.Text           as T
 import           Data.Time.Format    (defaultTimeLocale, formatTime)
@@ -20,8 +19,7 @@ import           OrgStat.Config      (ConfReport (..), ConfReportType (..),
                                       ConfScope (..), ConfigException (..),
                                       OrgStatConfig (..))
 import           OrgStat.IO          (readConfig, readOrgFile)
-import           OrgStat.Report      (processTimeline, tpColorSalt, tpColumnWidth,
-                                      writeReport)
+import           OrgStat.Report      (processTimeline, tpColorSalt, writeReport)
 import           OrgStat.Util        (fromJustM)
 import           OrgStat.WorkMonad   (WorkM, wConfigFile)
 
@@ -39,7 +37,7 @@ runOrgStat = do
             fromJustM (throwLogic $ scopeNotFound scopeName reportName) $
             pure $ find ((== scopeName) . csName) confScopes
     forM_ confReports $ \ConfReport{..} -> case crType of
-        Timeline{..} -> do
+        Timeline {..} -> do
             logDebug $ "Processing report " <> crName
             scopeFiles <- getScope timelineScope crName
             parsedOrgs <-
@@ -47,9 +45,8 @@ runOrgStat = do
             let orgTop =
                     mergeClocks $
                     Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) parsedOrgs
-                timelineParams = def & tpColorSalt .~ confColorSalt
-                                     & tpColumnWidth .~ timelineWidthCoeff
-            res <- processTimeline timelineParams orgTop
+                timelineParamsFinal = timelineParams & tpColorSalt .~ confColorSalt
+            res <- processTimeline timelineParamsFinal orgTop
             logInfo $ "Generating report " <> crName <> "..."
             writeReport reportDir (T.unpack crName) res
   where

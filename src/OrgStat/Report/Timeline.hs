@@ -3,11 +3,12 @@
 -- | Timeline reporting. Prouces a svg with columns.
 
 module OrgStat.Report.Timeline
-       ( TimelineParams
+       ( TimelineParams (..)
        , tpColorSalt
        , tpLegend
-       , tpTopDay
+       , tpTopDays
        , tpColumnWidth
+       , tpColumnHeight
 
        , processTimeline
        ) where
@@ -33,14 +34,15 @@ import           OrgStat.Util         (hashColour)
 ----------------------------------------------------------------------------
 
 data TimelineParams = TimelineParams
-    { _tpColorSalt   :: Int    -- ^ Salt added when getting color out of task name.
-    , _tpLegend      :: Bool   -- ^ Include map legend?
-    , _tpTopDay      :: Int    -- ^ How many items to include in top day (under column)
-    , _tpColumnWidth :: Double -- ^ Coeff
-    } deriving Show
+    { _tpColorSalt    :: Int    -- ^ Salt added when getting color out of task name.
+    , _tpLegend       :: Bool   -- ^ Include map legend?
+    , _tpTopDays      :: Int    -- ^ How many items to include in top day (under column)
+    , _tpColumnWidth  :: Double -- ^ Coeff
+    , _tpColumnHeight :: Double -- ^ Coeff
+    } deriving (Show)
 
 instance Default TimelineParams where
-    def = TimelineParams 0 True 5 1
+    def = TimelineParams 0 True 5 1 1
 
 makeLenses ''TimelineParams
 
@@ -119,7 +121,7 @@ timelineDay params clocks =
       ]
   where
     width = 140 * (totalHeight / height) * (params ^. tpColumnWidth)
-    height = 700
+    height = 700 * (params ^. tpColumnHeight)
 
     totalHeight :: Double
     totalHeight = 24*60
@@ -226,17 +228,14 @@ timelineReport params org = SVGImage pic
     -- top list for each day
     topLists :: [[(Text, DiffTime)]]
     topLists =
-        map (take (params ^. tpTopDay) . reverse . sortOn (\(_task, time) -> time))
+        map (take (params ^. tpTopDays) . reverse . sortOn (\(_task, time) -> time))
         byDayDurations
 
     optLegend | params ^. tpLegend = [taskList params allDaysDurations]
               | otherwise = []
 
     pic =
-      D.vsep 30 $
-      [ mempty
-      , timelineDays params clocks topLists
-      ] ++ optLegend
+      D.vsep 30 $ [ timelineDays params clocks topLists ] ++ optLegend
 
 processTimeline :: (MonadThrow m) => TimelineParams -> Org -> m SVGImageReport
 processTimeline params org = pure $ timelineReport params org
