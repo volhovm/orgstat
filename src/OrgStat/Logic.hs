@@ -83,6 +83,7 @@ runOrgStat = do
     liftIO $ createDirectoryIfMissing True reportDir
     logInfo $ "This report set will be put into: " <> T.pack reportDir
 
+    logInfo $ "Parsing files..."
     allParsedOrgs <- parseNeededFiles conf
     forM_ confReports $ \ConfReport{..} -> case crType of
         Timeline {..} -> do

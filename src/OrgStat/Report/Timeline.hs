@@ -43,11 +43,11 @@ data TimelineParams = TimelineParams
     , _tpTopDay       :: Int    -- ^ How many items to include in top day (under column)
     , _tpColumnWidth  :: Double -- ^ Coeff
     , _tpColumnHeight :: Double -- ^ Coeff
-    , _tpBackground   :: (Word8,Word8,Word8)
+    , _tpBackground   :: D.Colour Double
     } deriving (Show)
 
 instance Default TimelineParams where
-    def = TimelineParams 0 True 5 1 1 (0xf2, 0xf2, 0xf2)
+    def = TimelineParams 0 True 5 1 1 (D.sRGB24 0xf2 0xf2 0xf2)
 
 makeLenses ''TimelineParams
 
@@ -110,11 +110,8 @@ diffTimeMinutes time = diffTimeSeconds time `div` 60
 -- diffTimeHours time = diffTimeMinutes time `div` 60
 
 
-sRGB24Tuple :: (Floating a, Ord a) => (Word8,Word8,Word8) -> D.Colour a
-sRGB24Tuple (a,b,c) = D.sRGB24 a b c
-
 labelColour :: TimelineParams -> Text -> D.Colour Double
-labelColour params _label = sRGB24Tuple $ hashColour (params ^. tpColorSalt) _label
+labelColour params _label = hashColour (params ^. tpColorSalt) _label
 
 -- | Returns if the label is to be shown. Second param is font-related
 -- heuristic constant, third is length of interval.
@@ -177,11 +174,11 @@ timelineDay params day clocks =
     background =
       D.rect width totalHeight
       & D.lw D.none
-      & D.fc (sRGB24Tuple $ params ^. tpBackground)
+      & D.fc (params ^. tpBackground)
       & D.moveOriginTo (D.p2 (-width/2, totalHeight/2))
       & D.moveTo (D.p2 (0, totalHeight))
 
-    contrastFrom c = if luminance c < 0.1 then D.sRGB24 224 224 224 else D.black
+    contrastFrom c = if luminance c < 0.14 then D.sRGB24 224 224 224 else D.black
 
     showClock :: (Text, (DiffTime, DiffTime)) -> D.Diagram B
     showClock (label, (start, end)) =
