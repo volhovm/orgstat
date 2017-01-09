@@ -67,7 +67,7 @@ library
                        LambdaCase
                        MultiWayIf
 
-executable orgstat-cli
+executable orgstat
   main-is:             Main.hs
   build-depends:       base >=4.9 && <4.10
                      , bytestring

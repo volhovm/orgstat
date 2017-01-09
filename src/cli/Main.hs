@@ -19,6 +19,8 @@ import           OrgStat.WorkMonad          (WorkScope (..), runWorkM)
 data Args = Args
     { configPath :: !FilePath
       -- ^ Path to configuration file.
+    , xdgOpen    :: Bool
+      -- ^ Open report types using xdg-open
     , debug      :: Bool
       -- ^ Enable debug logging
     } deriving Show
@@ -29,10 +31,8 @@ argsParser homeDir =
     strOption
         (long "conf-path" <> metavar "FILEPATH" <> value (homeDir </> ".orgstat.yaml") <>
         help "Path to the configuration file") <*>
-    switch
-        (long "debug" <>
-         help
-             "Enable debug logging")
+    switch (long "xdg-open" <> help "Open each report using xdg-open") <*>
+    switch (long "debug" <> help "Enable debug logging")
 
 getNodeOptions :: FilePath -> IO Args
 getNodeOptions homeDir = do
@@ -49,7 +49,7 @@ main :: IO ()
 main = do
     args@Args{..} <- getNodeOptions =<< getHomeDirectory
     W.initLoggingWith (LoggingFormat False) (if debug then W.Debug else W.Info)
-    runWorkM (WorkScope configPath) $ do
+    runWorkM (WorkScope configPath xdgOpen) $ do
         logDebug $ "Just started with options: " <> show args
         runOrgStat `catch` topHandler
   where

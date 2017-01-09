@@ -31,7 +31,8 @@ import           OrgStat.IO                  (readConfig, readOrgFile)
 import           OrgStat.Report              (processTimeline, tpColorSalt, writeReport)
 import           OrgStat.Scope               (applyModifiers)
 import           OrgStat.Util                (fromJustM)
-import           OrgStat.WorkMonad           (WorkM, wConfigFile)
+import           OrgStat.WorkMonad           (WorkM, wConfigFile, wXdgOpen)
+import           Turtle                      (shell)
 
 
 -- Converts config range to a pair of 'UTCTime', right bound not inclusive.
@@ -100,6 +101,9 @@ runOrgStat = do
             res <- processTimeline timelineParamsFinal withModifiers fromto
             logInfo $ "Generating report " <> crName <> "..."
             writeReport reportDir (T.unpack crName) res
+    whenM (view wXdgOpen) $ do
+        logInfo "Opening reports using xdg-open..."
+        void $ shell ("for i in $(ls "<>T.pack reportDir<>"/*); do xdg-open $i; done") empty
   where
     applyMods mods o = case applyModifiers o mods of
         Left k  -> throwM k

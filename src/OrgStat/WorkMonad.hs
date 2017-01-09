@@ -5,6 +5,7 @@
 module OrgStat.WorkMonad
        ( WorkScope (..)
        , wConfigFile
+       , wXdgOpen
        , WorkM (..)
        , runWorkM
        ) where
@@ -15,6 +16,7 @@ import           Universum
 
 data WorkScope = WorkScope
     { _wConfigFile :: FilePath
+    , _wXdgOpen    :: Bool
     }
 
 makeLenses ''WorkScope
