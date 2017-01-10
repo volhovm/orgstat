@@ -19,9 +19,8 @@ import           Data.Colour.CIE      (luminance)
 import           Data.Default         (Default (..))
 import           Data.List            (lookup, nub)
 import qualified Data.Text            as T
-import           Data.Time            (Day, DiffTime, LocalTime (..), addUTCTime,
-                                       defaultTimeLocale, formatTime, localTimeToUTC,
-                                       timeOfDayToTime, utc, utcToLocalTime)
+import           Data.Time            (Day, DiffTime, LocalTime (..), defaultTimeLocale,
+                                       formatTime, timeOfDayToTime)
 import           Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude     as D
 import qualified Prelude
@@ -30,7 +29,7 @@ import           Universum
 
 import           OrgStat.Ast          (Clock (..), Org (..))
 import           OrgStat.Report.Types (SVGImageReport (..))
-import           OrgStat.Util         (hashColour)
+import           OrgStat.Util         (addLocalTime, hashColour)
 
 
 ----------------------------------------------------------------------------
@@ -243,8 +242,8 @@ timelineReport params org (from,to) = SVGImage pic
     lookupDef d a xs = fromMaybe d $ lookup a xs
 
     -- period to show. Right border is -1min, we assume it's non-inclusive
-    addLocalTime n a = utcToLocalTime utc $ n `addUTCTime` localTimeToUTC utc a
-    daysToShow = [localDay from .. localDay ((negate 120) `addLocalTime` to)]
+    daysToShow = [localDay from ..
+                  localDay ((negate 120 :: Int) `addLocalTime` to)]
 
     -- unfiltered leaves
     tasks :: [(Text, [Clock])]

@@ -77,5 +77,5 @@ mergeClocks = fmapOrgLens orgClocks (mergeClocksDo . sort)
     mergeClocksDo [x] = [x]
     mergeClocksDo (a:b:xs)
         | toUTC (cFrom b) `diffUTCTime ` toUTC (cTo a) < 2*60 =
-          Clock (cFrom a) (cTo b) : mergeClocksDo xs
+          mergeClocksDo $ (Clock (cFrom a) (cTo b)):xs
         | otherwise = a : mergeClocksDo (b:xs)

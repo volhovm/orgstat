@@ -2,52 +2,77 @@
 
 module GlobalSpec (spec) where
 
+import           Control.Lens          (to, (^.))
 import           Data.Colour.SRGB      (sRGB24show)
 import qualified Data.Text             as T
 import           Data.Text.Arbitrary   ()
-import           Data.Time             (LocalTime (..), addUTCTime, getZonedTime,
-                                        localTimeToUTC, utc, utcToLocalTime,
+import           Data.Time             (LocalTime (..), TimeOfDay (..), getZonedTime,
                                         zonedTimeToLocalTime)
-import           Data.Time.Calendar    (addGregorianMonthsRollOver)
-import           Test.Hspec            (Spec, describe, hspec, runIO)
+import           Data.Time.Calendar    (addGregorianMonthsRollOver, fromGregorian)
+import           Test.Hspec            (Spec, describe, hspec, pending, runIO)
 import           Test.Hspec.QuickCheck (prop)
-import           Test.QuickCheck       (Arbitrary (arbitrary), NonNegative (..),
-                                        Positive (..), Small (..), forAll, ioProperty,
-                                        oneof, (.&&.), (===), (==>))
+import           Test.QuickCheck       (Arbitrary (arbitrary), Gen, NonNegative (..),
+                                        Positive (..), Small (..), choose, forAll,
+                                        ioProperty, oneof, (.&&.), (===), (==>))
 import           Universum
+import           Unsafe                (unsafeTail)
 
+import           OrgStat.Ast           (Clock (..), Org (..), mergeClocks, orgClocks)
 import           OrgStat.Config        (ConfDate (..), ConfRange (..))
 import           OrgStat.Logic         (convertRange)
-import           OrgStat.Util          (parseColour)
+import           OrgStat.Util          (addLocalTime, parseColour)
 
-
-data ColorWrapper = ColorWrapper Text deriving Show
-
-instance Arbitrary ColorWrapper where
-    arbitrary = do
-        nums <- replicateM 6 $ oneof $ map pure "0123456789abcdef"
-        pref <- oneof $ map pure ["#", mempty]
-        pure $ ColorWrapper $ pref <> T.pack nums
 
 spec :: Spec
 spec = do
+    astSpec
     parseColourSpec
     convertRangeSpec
 
-parseColourSpec :: Spec
-parseColourSpec = describe "Util#parseColour" $ do
-    prop "Doesn't fail on correct inputs" $
-        forAll arbitrary $ \(ColorWrapper s) ->
-        let s' = T.unpack $ if "#" `T.isPrefixOf` s then s else "#" <> s
-        in (sRGB24show <$> (parseColour @Text @Double s)) === Just s'
-    prop "Fails on incorrect inputs" $
-        forAll arbitrary $ \s ->
-        length s > 6 ==> (parseColour @Text @Double s) === Nothing
+----------------------------------------------------------------------------
+-- AST
+----------------------------------------------------------------------------
+
+instance Arbitrary LocalTime where
+    arbitrary = do
+        d <- choose (1, 28)
+        m <- choose (1, 12)
+        y <- choose (2015, 2016)
+        todHour <- choose (0, 23)
+        todMin <- choose (0, 59)
+        todSec <- fromIntegral <$> (choose (0, 60) :: Gen Int)
+        return $ LocalTime (fromGregorian y m d) TimeOfDay{..}
+
+newtype OrgWrapper = OrgWrapper Org deriving Show
+
+-- Generates an org file with almost-fitting intervals that should be
+-- merged in one
+contOrg :: Int -> Int -> Gen Org
+contOrg dfrom dto = do
+    (Positive i) <- arbitrary
+    (checkpoints :: [LocalTime]) <- sort <$> replicateM (i+1) arbitrary
+    pairs <- forM (checkpoints `zip` unsafeTail checkpoints) $ \(c,c') -> do
+        delta <- choose (dfrom,dto)
+        pure (c, negate delta `addLocalTime` c')
+    let clocks = map (uncurry Clock) pairs
+    pure $ Org "ShouldHaveOneSubclock" [] clocks []
+
+astSpec :: Spec
+astSpec = do
+    describe "Ast#mergeClocks" $ do
+        prop "merges a set of clocks when needed into one" $
+            forAll (contOrg 0 90) $ \o ->
+            mergeClocks o ^. orgClocks . to length === 1
+        prop "doesn't modify big deltas" $
+            forAll (contOrg 120 240) $ \o -> mergeClocks o === o
+
+----------------------------------------------------------------------------
+-- Ranges
+----------------------------------------------------------------------------
 
 convertRangeSpec :: Spec
-convertRangeSpec =  describe "Logic#convertRange" $ do
+convertRangeSpec = describe "Logic#convertRange" $ do
     curTime <- runIO $ zonedTimeToLocalTime <$> getZonedTime
-    let addLocalTime n a = utcToLocalTime utc $ fromIntegral n `addUTCTime` localTimeToUTC utc a
     let subDays a i = (negate i * 60 * 60 * 24) `addLocalTime` a
     let subWeeks a i = (negate i * 60 * 60 * 24 * 7) `addLocalTime` a
     let subMonths a i = a { localDay = (negate i) `addGregorianMonthsRollOver` (localDay a) }
@@ -72,3 +97,26 @@ convertRangeSpec =  describe "Logic#convertRange" $ do
             ioProperty (inRange (subMonths curTime i) <$> convert (ConfBlockMonth i)) .&&.
             ioProperty (not . inRange (subMonths curTime $ i+1) <$> convert (ConfBlockMonth i)) .&&.
             ioProperty (not . inRange (subMonths curTime i) <$> convert (ConfBlockMonth $ i+1))
+
+
+----------------------------------------------------------------------------
+-- Utils
+----------------------------------------------------------------------------
+
+newtype ColorWrapper = ColorWrapper Text deriving Show
+
+instance Arbitrary ColorWrapper where
+    arbitrary = do
+        nums <- replicateM 6 $ oneof $ map pure "0123456789abcdef"
+        pref <- oneof $ map pure ["#", mempty]
+        pure $ ColorWrapper $ pref <> T.pack nums
+
+parseColourSpec :: Spec
+parseColourSpec = describe "Util#parseColour" $ do
+    prop "Doesn't fail on correct inputs" $
+        forAll arbitrary $ \(ColorWrapper s) ->
+        let s' = T.unpack $ if "#" `T.isPrefixOf` s then s else "#" <> s
+        in (sRGB24show <$> (parseColour @Text @Double s)) === Just s'
+    prop "Fails on incorrect inputs" $
+        forAll arbitrary $ \s ->
+        length s > 6 ==> (parseColour @Text @Double s) === Nothing

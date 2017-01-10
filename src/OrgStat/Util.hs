@@ -4,6 +4,7 @@
 module OrgStat.Util
        ( dropLowerOptions
        , dropEnd
+       , addLocalTime
        , fromJustM
        , parseColour
        , hashColour
@@ -20,6 +21,8 @@ import           Data.Colour.SRGB (RGB (..), sRGB24, toSRGBBounded)
 import           Data.Hashable    (hashWithSalt)
 import           Data.List        (nub)
 import           Data.List        ((!!))
+import           Data.Time        (LocalTime (..), addUTCTime, localTimeToUTC, utc,
+                                   utcToLocalTime)
 import           Universum
 
 -- | JSON/Yaml TH modifier. Each field of type "aoeuKek" turns into
@@ -37,6 +40,11 @@ fromJustM e m = maybe e pure =<< m
 -- | Drops n items from the end.
 dropEnd :: Int -> [x] -> [x]
 dropEnd n xs = take (length xs - n) xs
+
+-- | Same as 'addUTCTime', but for local
+addLocalTime :: (Integral n) => n -> LocalTime -> LocalTime
+addLocalTime n a =
+    utcToLocalTime utc $ fromIntegral n `addUTCTime` localTimeToUTC utc a
 
 -- | Parses colour from format '#rrggbb' or just 'rrggbb'
 parseColour :: forall s a. (ToString s, Floating a, Ord a) => s -> Maybe (Colour a)
