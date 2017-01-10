@@ -2,7 +2,7 @@
 
 module GlobalSpec (spec) where
 
-import           Control.Lens          (to, (^.))
+import           Control.Lens          (to, (^.), (^..))
 import           Data.Colour.SRGB      (sRGB24show)
 import qualified Data.Text             as T
 import           Data.Text.Arbitrary   ()
@@ -13,11 +13,12 @@ import           Test.Hspec            (Spec, describe, hspec, pending, runIO)
 import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck       (Arbitrary (arbitrary), Gen, NonNegative (..),
                                         Positive (..), Small (..), choose, forAll,
-                                        ioProperty, oneof, (.&&.), (===), (==>))
+                                        ioProperty, oneof, sized, (.&&.), (===), (==>))
 import           Universum
 import           Unsafe                (unsafeTail)
 
-import           OrgStat.Ast           (Clock (..), Org (..), mergeClocks, orgClocks)
+import           OrgStat.Ast           (Clock (..), Org (..), atDepth, mergeClocks,
+                                        orgClocks)
 import           OrgStat.Config        (ConfDate (..), ConfRange (..))
 import           OrgStat.Logic         (convertRange)
 import           OrgStat.Util          (addLocalTime, parseColour)
@@ -43,6 +44,25 @@ instance Arbitrary LocalTime where
         todSec <- fromIntegral <$> (choose (0, 60) :: Gen Int)
         return $ LocalTime (fromGregorian y m d) TimeOfDay{..}
 
+instance Arbitrary Clock where
+    arbitrary = do
+        [a,b] <- replicateM 2 arbitrary
+        pure . (uncurry Clock) $ if a < b then (a,b) else (b,a)
+
+genOrgDepth :: Int -> Gen Org
+genOrgDepth n = do
+    childrenN <- choose (1,5)
+    clock <- arbitrary
+    name <- T.take 10 <$> arbitrary
+    children <-
+        if n == 0
+        then pure []
+        else replicateM childrenN (genOrgDepth $ n - 1)
+    pure $ Org name [] [clock] children
+
+instance Arbitrary Org where
+    arbitrary = genOrgDepth 5
+
 newtype OrgWrapper = OrgWrapper Org deriving Show
 
 -- Generates an org file with almost-fitting intervals that should be
@@ -65,6 +85,12 @@ astSpec = do
             mergeClocks o ^. orgClocks . to length === 1
         prop "doesn't modify big deltas" $
             forAll (contOrg 120 240) $ \o -> mergeClocks o === o
+    describe "Ast#lenses" $ do
+        prop "atDepth 0 is always the same" $
+            forAll arbitrary $ \o -> o ^.. atDepth 0 === [o]
+        prop "atDepth i for i-tree is not empty$" $
+            forAll arbitrary $ \(Positive (Small i)) ->
+            forAll (genOrgDepth i) $ \o -> o ^.. atDepth 0 /= []
 
 ----------------------------------------------------------------------------
 -- Ranges
