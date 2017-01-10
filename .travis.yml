@@ -17,7 +17,6 @@ install:
 - stack --no-terminal --install-ghc build --only-dependencies --jobs=4
 script:
 - stack --no-terminal build --test --haddock --no-haddock-deps --bench --jobs=4
-    --flag orgstat:build-executables
 notifications:
   email: false
   slack:
