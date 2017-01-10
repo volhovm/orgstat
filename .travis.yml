@@ -18,10 +18,5 @@ install:
 script:
 - stack --no-terminal build --test --haddock --no-haddock-deps --bench --jobs=4
 notifications:
-  email: false
-  slack:
-    rooms:
-      - serokell:Lk0GI0786tPYo9Nve9SSuPOf
-    on_success: change
-    on_failure: always
+  email: true
 
