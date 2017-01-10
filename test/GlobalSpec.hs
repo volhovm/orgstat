@@ -9,7 +9,7 @@ import           Data.Text.Arbitrary   ()
 import           Data.Time             (LocalTime (..), TimeOfDay (..), getZonedTime,
                                         zonedTimeToLocalTime)
 import           Data.Time.Calendar    (addGregorianMonthsRollOver, fromGregorian)
-import           Test.Hspec            (Spec, describe, hspec, pending, runIO)
+import           Test.Hspec            (Spec, describe, runIO)
 import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck       (Arbitrary (arbitrary), Gen, NonNegative (..),
                                         Positive (..), Small (..), choose, forAll,
@@ -51,7 +51,7 @@ instance Arbitrary Clock where
 
 genOrgDepth :: Int -> Gen Org
 genOrgDepth n = do
-    childrenN <- choose (1,5)
+    childrenN <- choose (1,2)
     clock <- arbitrary
     name <- T.take 10 <$> arbitrary
     children <-
@@ -88,9 +88,14 @@ astSpec = do
     describe "Ast#lenses" $ do
         prop "atDepth 0 is always the same" $
             forAll arbitrary $ \o -> o ^.. atDepth 0 === [o]
-        prop "atDepth i for i-tree is not empty$" $
+        prop "atDepth i for i-tree is not empty" $
             forAll arbitrary $ \(Positive (Small i)) ->
-            forAll (genOrgDepth i) $ \o -> o ^.. atDepth 0 /= []
+            forAll (genOrgDepth i) $ \o ->
+            i < 10 ==> (o ^.. atDepth i /= [])
+        prop "atDepth (i+1) for i-tree is empty" $
+            forAll arbitrary $ \(Positive (Small i)) ->
+            forAll (genOrgDepth i) $ \o ->
+            i < 10 ==> (o ^.. atDepth (i+1) === [])
 
 ----------------------------------------------------------------------------
 -- Ranges
