@@ -48,7 +48,7 @@ library
                      , yaml >= 0.8.21.1
   hs-source-dirs:      src
   default-language:    Haskell2010
-  ghc-options:         -Wall -fhpc
+  ghc-options:         -Wall
   default-extensions:  GeneralizedNewtypeDeriving
                        StandaloneDeriving
                        FlexibleContexts
