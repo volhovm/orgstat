@@ -3,7 +3,7 @@ language: c
 cache:
   directories:
   - "$HOME/.stack"
-  - "$HOME/build/serokell/time-warp/.stack-work"
+  - "$HOME/build/volhovm/orgstat/.stack-work"
 addons:
   apt:
     packages:
@@ -17,7 +17,7 @@ install:
 - stack --no-terminal --install-ghc build --only-dependencies --jobs=4
 script:
 - stack --no-terminal build --test --haddock --no-haddock-deps --bench --jobs=4
-    --flag time-warp:build-executables
+    --flag orgstat:build-executables
 notifications:
   email: false
   slack:
