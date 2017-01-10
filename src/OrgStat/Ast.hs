@@ -79,16 +79,3 @@ mergeClocks = fmapOrgLens orgClocks (mergeClocksDo . sort)
         | toUTC (cFrom b) `diffUTCTime ` toUTC (cTo a) < 2*60 =
           Clock (cFrom a) (cTo b) : mergeClocksDo xs
         | otherwise = a : mergeClocksDo (b:xs)
-
-----------------------------------------------------------------------------
--- For testing
-----------------------------------------------------------------------------
-
--- testOrg7 = Org "kek7" [] [] []
--- testOrg6 = Org "kek6" [] [] []
--- testOrg4 = Org "kek4" [] [] [testOrg7]
--- testOrg5 = Org "kek5" [] [] []
--- testOrg1 = Org "kek1" [] [] []
--- testOrg2 = Org "kek2" [] [] [testOrg5, testOrg6]
--- testOrg3 = Org "kek3" [] [] [testOrg4]
--- testOrg0 = Org "kek0" [] [] [testOrg1, testOrg2, testOrg3]

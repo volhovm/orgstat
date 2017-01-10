@@ -3,7 +3,8 @@
 -- | Main logic combining all components
 
 module OrgStat.Logic
-       ( runOrgStat
+       ( convertRange
+       , runOrgStat
        ) where
 
 import           Control.Lens                (view, (.~), _3)
