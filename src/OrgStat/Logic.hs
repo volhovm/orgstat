@@ -3,7 +3,8 @@
 -- | Main logic combining all components
 
 module OrgStat.Logic
-       ( runOrgStat
+       ( convertRange
+       , runOrgStat
        ) where
 
 import           Control.Lens                (view, (.~), _3)
@@ -99,6 +100,7 @@ runOrgStat = do
             let timelineParamsFinal = timelineParams & tpColorSalt .~ confColorSalt
             logDebug $ "Launching timeline report with params: " <> show timelineParamsFinal
             fromto <- convertRange timelineRange
+            logDebug $ "Using range: " <> show fromto
             res <- processTimeline timelineParamsFinal withModifiers fromto
             logInfo $ "Generating report " <> crName <> "..."
             writeReport reportDir (T.unpack crName) res

@@ -5,3 +5,5 @@
 .#*
 tmp/
 some.svg
+.hpc/
+*.tix
