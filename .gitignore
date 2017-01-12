@@ -7,3 +7,4 @@ tmp/
 some.svg
 .hpc/
 *.tix
+dist/
