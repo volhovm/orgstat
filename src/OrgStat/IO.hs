@@ -15,7 +15,7 @@ import           Data.Yaml        (decodeEither)
 import           System.Directory (doesFileExist)
 import           System.FilePath  (takeBaseName, takeExtension)
 import           System.Wlog      (WithLogger, logDebug)
-import           Turtle           (procStrict)
+import           Turtle           (ExitCode (..), procStrict)
 import           Universum
 
 import           OrgStat.Ast      (Org)

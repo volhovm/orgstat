@@ -2,7 +2,7 @@
 
 module GlobalSpec (spec) where
 
-import           Control.Lens          (to, (^.), (^..))
+import           Control.Lens          (to)
 import           Data.Colour.SRGB      (sRGB24show)
 import qualified Data.Text             as T
 import           Data.Text.Arbitrary   ()
@@ -13,7 +13,7 @@ import           Test.Hspec            (Spec, describe, runIO)
 import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck       (Arbitrary (arbitrary), Gen, NonNegative (..),
                                         Positive (..), Small (..), choose, forAll,
-                                        ioProperty, oneof, sized, (.&&.), (===), (==>))
+                                        ioProperty, oneof, (.&&.), (===), (==>))
 import           Universum
 import           Unsafe                (unsafeTail)
 

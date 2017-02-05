@@ -14,7 +14,7 @@ module OrgStat.Scope
        ) where
 
 import qualified Base                 as Base
-import           Control.Lens         (Lens', to, view, (%~), (.~), (^.), (^..))
+import           Control.Lens         (to)
 import           Control.Monad.Except (throwError)
 import qualified Data.Text            as T
 import           Universum

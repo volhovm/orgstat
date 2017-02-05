@@ -1,4 +1,6 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 -- | Timeline reporting. Prouces a svg with columns.
 
@@ -14,7 +16,7 @@ module OrgStat.Report.Timeline
        , processTimeline
        ) where
 
-import           Control.Lens         (makeLenses, (^.))
+import           Control.Lens         (makeLenses)
 import           Data.Colour.CIE      (luminance)
 import           Data.Default         (Default (..))
 import           Data.List            (lookup, nub)
@@ -49,6 +51,26 @@ instance Default TimelineParams where
     def = TimelineParams 0 True 5 1 1 (D.sRGB24 0xf2 0xf2 0xf2)
 
 makeLenses ''TimelineParams
+
+-- | For all non-default field values of RHS, override LHS with them.
+mergeParams :: TimelineParams -> TimelineParams -> TimelineParams
+mergeParams lhs rhs = mods lhs
+  where
+    mods = foldr1 (.)
+           [ asId tpColorSalt
+           , asId tpLegend
+           , asId tpTopDay
+           , asId tpColumnWidth
+           , asId tpColumnHeight
+           , asId tpBackground ]
+    asId :: forall b. (Eq b) => Lens' TimelineParams b -> TimelineParams -> TimelineParams
+    asId l x =
+        if def ^. l == rhs ^. l
+        then x else x & l .~ (rhs ^. l)
+
+instance Monoid TimelineParams where
+    mempty = def
+    mappend = mergeParams
 
 ----------------------------------------------------------------------------
 -- Processing clocks

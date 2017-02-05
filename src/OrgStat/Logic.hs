@@ -7,7 +7,6 @@ module OrgStat.Logic
        , runOrgStat
        ) where
 
-import           Control.Lens                (view, (.~), _3)
 import           Data.List                   (notElem, nub, nubBy)
 import qualified Data.List.NonEmpty          as NE
 import qualified Data.Map                    as M
@@ -97,7 +96,8 @@ runOrgStat = do
                         scopeFiles
             let orgTop = Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) neededOrgs
             withModifiers <- mergeClocks <$> applyMods crModifiers orgTop
-            let timelineParamsFinal = timelineParams & tpColorSalt .~ confColorSalt
+            let timelineParamsFinal =
+                    (confBaseTimelineParams <> timelineParams) & tpColorSalt .~ confColorSalt
             logDebug $ "Launching timeline report with params: " <> show timelineParamsFinal
             fromto <- convertRange timelineRange
             logDebug $ "Using range: " <> show fromto

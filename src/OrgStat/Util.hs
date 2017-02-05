@@ -11,7 +11,7 @@ module OrgStat.Util
        , (??~)
        ) where
 
-import           Control.Lens     (ASetter, ix, (%~), (.~))
+import           Control.Lens     (ASetter, ix)
 import           Data.Aeson.TH    (defaultOptions)
 import           Data.Aeson.Types (Options, fieldLabelModifier)
 import           Data.Char        (isLower, toLower)

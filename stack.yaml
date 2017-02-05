@@ -1,4 +1,4 @@
-resolver: lts-7.14
+resolver: lts-7.16
 
 nix:
   shell-file: shell.nix
@@ -6,4 +6,4 @@ nix:
 extra-deps:
 - log-warper-0.2.1
 - orgmode-parse-0.1.1.3
-- universum-0.1.12
+- universum-0.2.1

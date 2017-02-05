@@ -69,11 +69,12 @@ data ConfReport = ConfReport
     } deriving (Show)
 
 data OrgStatConfig = OrgStatConfig
-    { confScopes       :: [ConfScope]
-    , confReports      :: [ConfReport]
-    , confTodoKeywords :: [Text]
-    , confOutputDir    :: FilePath -- default is "./orgstat"
-    , confColorSalt    :: Int
+    { confScopes             :: [ConfScope]
+    , confReports            :: [ConfReport]
+    , confBaseTimelineParams :: TimelineParams
+    , confTodoKeywords       :: [Text]
+    , confOutputDir          :: FilePath -- default is "./orgstat"
+    , confColorSalt          :: Int
     } deriving (Show)
 
 instance FromJSON AstPath where
@@ -159,6 +160,7 @@ instance FromJSON OrgStatConfig where
     parseJSON (Object v) = do
         OrgStatConfig <$> v .: "scopes"
                       <*> v .: "reports"
+                      <*> v .:? "timelineDefault" .!= def
                       <*> v .:? "todoKeywords" .!= []
                       <*> v .:? "output" .!= "./orgstat"
                       <*> v .:? "colorSalt" .!= 0

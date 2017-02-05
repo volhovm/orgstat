@@ -16,7 +16,7 @@ module OrgStat.Ast
        , mergeClocks
        ) where
 
-import           Control.Lens (ASetter', Traversal', makeLenses, (%~), (.~), (^.))
+import           Control.Lens (ASetter', makeLenses)
 import           Data.Time    (LocalTime, diffUTCTime, localTimeToUTC, utc)
 
 import           Universum
