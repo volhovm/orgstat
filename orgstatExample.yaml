@@ -15,7 +15,7 @@ timelineDefault:
   colHeight: 1.1        # height of single timeline column
   topDay: 8             # number of days in per-day longest-top list
   legend: true          # should legend be shown (true by default)
-  background: 'f00aa' # background color, grey by default
+  background: '#ff00aa' # background color, grey by default
 reports:
   # Current week, all tasks
   - name: curWeekFull
