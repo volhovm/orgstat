@@ -1,67 +1,61 @@
+# This is example orgstat configuration file. Sadly it's still 
+# poor, so check out Config.hs for more options if needed.
+
+# Scopes are sets of org-mode files you consider as one
+# working tree. Different possible scopes are possible, but
+# in general it's convenient to work with a single one, controlling
+# output with scope modifiers.
 scopes:
-  - paths: [/home/volhovm/org/study.org, /home/volhovm/org/work.org, /home/volhovm/org/private.org.gpg]
-  - name: study
-    paths: [/home/volhovm/org/study.org]
-  - name: studyWork
-    paths: [/home/volhovm/org/study.org, /home/volhovm/org/work.org]
-  - name: private
-    paths: [/home/volhovm/org/private.org.gpg]
+  - paths: [/home/username/org/study.org, /home/username/org/work.org, /home/username/org/private.org.gpg]
+  - name: alternative
+    paths: [/home/username/secretAgentLife.org]
+# Default configuration for timeline
+timelineDefault:
+  colWidth: 1.2         # width of single timeline column
+  colHeight: 1.1        # height of single timeline column
+  topDay: 8             # number of days in per-day longest-top list
+  legend: true          # should legend be shown (true by default)
+  background: 'f00aa' # background color, grey by default
 reports:
-  - name: prevWeekFull
+  # Current week, all tasks
+  - name: curWeekFull
     type: 
       type: timeline
-      range: week-1
-      colWidth: 1.2
-      colHeight: 1.1
-      topDay: 4
-  - name: prevWeekTop
+      range: week # month-1, week-5, day-3 are possible (as in org-mode)
+  # Current week, only work/study
+  - name: curWeekTop
     type: 
       type: timeline
-      range: week-1
-      colWidth: 1.2
-      colHeight: 1.1
-      topDay: 4
+      range: week
+      # scope: default # 'default' is the default scope, but you 
+      # can chose another one
+      background: 
     modifiers:
+      # Prune modifier goes to node on path and transforms all  
+      # noes at depth 'depth' into leaves, collecting their
+      # timestamps into one
       - type: prune
         path: /study/
         depth: 1
       - type: prune
         path: /work/
         depth: 1
-  - name: yesterdayProcrastination
+  # Only study, previous week
+  - name: curWeekStudy
     type: 
       type: timeline
-      range: day-1
-      colWidth: 2.5
-      colHeight: 1.1
-      topDay: 0
-      background: e5e5e5
-    modifiers:
-      - type: select 
-        path: /private/Living the life/
-      - type: prune
-        path: /
-        depth: 1
-  - name: studyingToplvl
-    type: 
-      type: timeline
-      range: week
-      colWidth: 1.1
-      colHeight: 1.1
-      topDay: 3
+      range: week-1
     modifiers: 
+      # Select does 'cd' into the chosen node.
       - type: select 
-        path: study/Term 7
+        path: study
       - type: prune
         path: /
-        depth: 1
-#  - name: sinceMonthTimeline
-#    type: 
-#      type: timeline
-#      # scope: studyScope # default
-#      range: 
-#         from: 2016-06-06 00:00
-#         to: now 
-output: ./tmp
+        depth: 2
+# Output folder. Subfolder for report will be auto-generated.
+output: /home/username/reps/orgstat/
+# Must contain all todo keywords you use in files, because
+# otherwise parsed headings' titles will contain them prepended.
 todoKeywords: [ TODO, STARTED, WAITING, DONE, CANCELED ]
-colorSalt: 4
+# Salt that controls coloring of report items
+colorSalt: 3

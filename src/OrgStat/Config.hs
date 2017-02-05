@@ -41,40 +41,40 @@ instance Exception ConfigException
 
 data ConfDate
     = ConfNow
-    | ConfLocal LocalTime
+    | ConfLocal !LocalTime
     deriving (Show)
 
 data ConfRange
-    = ConfFromTo ConfDate ConfDate
-    | ConfBlockWeek Integer
-    | ConfBlockDay Integer
-    | ConfBlockMonth Integer
+    = ConfFromTo !ConfDate !ConfDate
+    | ConfBlockWeek !Integer
+    | ConfBlockDay !Integer
+    | ConfBlockMonth !Integer
     deriving (Show)
 
 data ConfReportType = Timeline
-    { timelineRange  :: ConfRange
-    , timelineScope  :: Text
-    , timelineParams :: TimelineParams
+    { timelineRange  :: !ConfRange
+    , timelineScope  :: !Text
+    , timelineParams :: !TimelineParams
     } deriving (Show)
 
 data ConfScope = ConfScope
-    { csName  :: Text              -- default is "default"
-    , csPaths :: NonEmpty FilePath
+    { csName  :: !Text              -- default is "default"
+    , csPaths :: !(NonEmpty FilePath)
     } deriving (Show)
 
 data ConfReport = ConfReport
-    { crType      :: ConfReportType -- includes config
-    , crName      :: Text
-    , crModifiers :: [ScopeModifier]
+    { crType      :: !ConfReportType -- includes config
+    , crName      :: !Text
+    , crModifiers :: ![ScopeModifier]
     } deriving (Show)
 
 data OrgStatConfig = OrgStatConfig
-    { confScopes             :: [ConfScope]
-    , confReports            :: [ConfReport]
-    , confBaseTimelineParams :: TimelineParams
-    , confTodoKeywords       :: [Text]
-    , confOutputDir          :: FilePath -- default is "./orgstat"
-    , confColorSalt          :: Int
+    { confScopes             :: ![ConfScope]
+    , confReports            :: ![ConfReport]
+    , confBaseTimelineParams :: !TimelineParams
+    , confTodoKeywords       :: ![Text]
+    , confOutputDir          :: !FilePath -- default is "./orgstat"
+    , confColorSalt          :: !Int
     } deriving (Show)
 
 instance FromJSON AstPath where

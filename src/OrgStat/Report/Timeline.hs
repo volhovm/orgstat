@@ -39,12 +39,18 @@ import           OrgStat.Util         (addLocalTime, hashColour)
 ----------------------------------------------------------------------------
 
 data TimelineParams = TimelineParams
-    { _tpColorSalt    :: Int    -- ^ Salt added when getting color out of task name.
-    , _tpLegend       :: Bool   -- ^ Include map legend?
-    , _tpTopDay       :: Int    -- ^ How many items to include in top day (under column)
-    , _tpColumnWidth  :: Double -- ^ Coeff
-    , _tpColumnHeight :: Double -- ^ Coeff
-    , _tpBackground   :: D.Colour Double
+    { _tpColorSalt    :: !Int
+      -- ^ Salt added when getting color out of task name.
+    , _tpLegend       :: !Bool
+      -- ^ Include map legend?
+    , _tpTopDay       :: !Int
+      -- ^ How many items to include in top day (under column)
+    , _tpColumnWidth  :: !Double
+      -- ^ Column width in percent
+    , _tpColumnHeight :: !Double
+      -- ^ Column height
+    , _tpBackground   :: !(D.Colour Double)
+      -- ^ Color of background
     } deriving (Show)
 
 instance Default TimelineParams where
