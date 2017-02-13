@@ -9,8 +9,8 @@ import           Options.Applicative.Simple (Parser, help, long, metavar, simple
 import           Paths_orgstat              (version)
 import           System.Directory           (getHomeDirectory)
 import           System.FilePath            ((</>))
-import           System.Wlog                (LoggingFormat (..), logDebug, logError)
-import qualified System.Wlog                as W
+import           System.Wlog                (Severity (..), consoleOutB, lcTermSeverity,
+                                             logDebug, logError, setupLogging)
 import           Universum
 
 import           OrgStat.Logic              (runOrgStat)
@@ -48,7 +48,8 @@ getNodeOptions homeDir = do
 main :: IO ()
 main = do
     args@Args{..} <- getNodeOptions =<< getHomeDirectory
-    W.initLoggingWith (LoggingFormat False) (if debug then W.Debug else W.Info)
+    let sev = if debug then Debug else Info
+    setupLogging $ consoleOutB True & lcTermSeverity .~ Just sev
     runWorkM (WorkScope configPath xdgOpen) $ do
         logDebug $ "Just started with options: " <> show args
         runOrgStat `catch` topHandler

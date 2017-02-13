@@ -1,5 +1,5 @@
 name:                orgstat
-version:             0.0.1
+version:             0.0.2
 synopsis:            Statistics visualizer for org-mode
 license:             GPL-3
 license-file:        LICENSE
