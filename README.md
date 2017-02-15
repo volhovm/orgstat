@@ -1,6 +1,7 @@
 # orgstat
 
 [![Build Status](https://travis-ci.org/volhovM/orgstat.svg?branch=master)](https://travis-ci.org/volhovM/orgstat)
+[![Hackage status](https://img.shields.io/hackage/v/orgstat.svg)](http://hackage.haskell.org/package/orgstat)
 
 Orgstat is statistics visualizer for org-mode. Given a set of org-mode files, 
 it parses them, generates tree, applies modifications and generates reports
