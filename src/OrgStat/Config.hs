@@ -103,11 +103,13 @@ instance FromJSON ConfRange where
     parseJSON (String s) | any (`T.isPrefixOf` s) ["day", "week", "month"] = do
         let splitted = T.splitOn "-" $ if "-" `T.isInfixOf` s then s else s <> "-"
             [range, number] = splitted
-            constructor = case range of
-                "day"   -> ConfBlockDay
-                "week"  -> ConfBlockWeek
-                "month" -> ConfBlockMonth
-                _       -> panic "ConfRange@parseJSON"
+            constructor :: (Monad m, MonadFail m) => Integer -> m ConfRange
+            constructor i = case range of
+                "day"   -> pure $ ConfBlockDay i
+                "week"  -> pure $ ConfBlockWeek i
+                "month" -> pure $ ConfBlockMonth i
+                t       -> fail $ "ConfRange@parseJSON can't parse " <> T.unpack t <>
+                                  " should be [day|week|month]"
             numberParsed
                 | number == "" = pure 0
                 | otherwise = case readMaybe (T.unpack number) of
@@ -116,7 +118,7 @@ instance FromJSON ConfRange where
         when (length splitted /= 2) $
             fail $ "Couldn't parse range " <> T.unpack s <>
                    ", splitted is " <> show splitted
-        constructor <$> numberParsed
+        constructor =<< numberParsed
     parseJSON (Object v)       = ConfFromTo <$> v .: "from" <*> v .: "to"
     parseJSON invalid          = typeMismatch "ConfRange" invalid
 

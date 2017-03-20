@@ -94,7 +94,7 @@ applyModifier m@(ModSelectSubtree path) org = do
     unless (existsPath path org) $
         throwError $ MEWrongParam m $ "Path " <> show path <> " doesn't exist"
     pure $
-        fromMaybe (panic "applyModifier@ModSelectSubtree is broken") $
+        fromMaybe (error "applyModifier@ModSelectSubtree is broken") $
         org ^. atPath path
 applyModifier _ org = pure org -- TODO
 

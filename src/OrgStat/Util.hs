@@ -63,7 +63,7 @@ parseColour (toString -> s) = toColour $ dropWhile (== '#') s
 hashColour :: (Hashable a) => Int -> a -> Colour Double
 hashColour salt item = colours !! (hashWithSalt salt item `mod` length colours)
   where
-    broken = panic "Util#hashColour is broken"
+    broken = error "Util#hashColour is broken"
     range = [-5,0,5]
     colours = filter (\c -> luminance c < 0.8 && luminance c > 0.06) mutate
     ac :: Word8 -> Integer -> Word8

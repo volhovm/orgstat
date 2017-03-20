@@ -39,17 +39,17 @@ import           Turtle                      (shell)
 convertRange :: (MonadIO m) => ConfRange -> m (LocalTime, LocalTime)
 convertRange range = case range of
     (ConfFromTo f t)  -> (,) <$> fromConfDate f <*> fromConfDate t
-    (ConfBlockDay i) | i < 0 -> panic $ "ConfBlockDay i is <0: " <> show i
+    (ConfBlockDay i) | i < 0 -> error $ "ConfBlockDay i is <0: " <> show i
     (ConfBlockDay 0) -> (,) <$> (localFromDay <$> startOfDay) <*> curTime
     (ConfBlockDay i) -> do
         d <- (negate (i - 1) `addDays`) <$> startOfDay
         pure $ localFromDayPair ((negate 1) `addDays` d, d)
-    (ConfBlockWeek i) | i < 0 -> panic $ "ConfBlockWeek i is <0: " <> show i
+    (ConfBlockWeek i) | i < 0 -> error $ "ConfBlockWeek i is <0: " <> show i
     (ConfBlockWeek 0) -> (,) <$> (localFromDay <$> startOfWeek) <*> curTime
     (ConfBlockWeek i) -> do
         d <- (negate (i - 1) `addWeeks`) <$> startOfWeek
         pure $ localFromDayPair ((negate 1) `addWeeks` d, d)
-    (ConfBlockMonth i) | i < 0 -> panic $ "ConfBlockMonth i is <0: " <> show i
+    (ConfBlockMonth i) | i < 0 -> error $ "ConfBlockMonth i is <0: " <> show i
     (ConfBlockMonth 0) -> (,) <$> (localFromDay <$> startOfMonth) <*> curTime
     (ConfBlockMonth i) -> do
         d <- addGregorianMonthsRollOver (negate $ i-1) <$> startOfMonth
@@ -91,7 +91,7 @@ runOrgStat = do
             scope <- getScope conf timelineScope crName
             let scopeFiles = NE.toList $ csPaths scope
                 neededOrgs =
-                    map (\f -> fromMaybe (panic $ scopeNotFound (T.pack f) crName) $
+                    map (\f -> fromMaybe (error $ scopeNotFound (T.pack f) crName) $
                                M.lookup f allParsedOrgs)
                         scopeFiles
             let orgTop = Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) neededOrgs
