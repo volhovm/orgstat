@@ -85,14 +85,14 @@ instance Monoid TimelineParams where
 -- [(a, [b])] -> [(a, b)]
 allClocks :: [(Text, [(DiffTime, DiffTime)])] -> [(Text, (DiffTime, DiffTime))]
 allClocks tasks = do
-  (label, clocks) <- tasks
-  clock <- clocks
-  pure (label, clock)
+    (label, clocks) <- tasks
+    clock <- clocks
+    pure (label, clock)
 
 -- separate list for each day
 selectDays :: [Day] -> [(Text, [Clock])] -> [[(Text, [(DiffTime, DiffTime)])]]
 selectDays days tasks =
-    foreach days $ \day ->
+    flip map days $ \day ->
       filter (not . null . snd) $
       map (second (selectDay day)) tasks
   where
@@ -175,7 +175,7 @@ timelineDay params day clocks =
     timeticks :: D.Diagram B
     timeticks =
       mconcat $
-      foreach [(0::Int)..23] $ \hour ->
+      flip map [(0::Int)..23] $ \hour ->
       mconcat
         [ D.alignedText 0.5 1 (show hour)
           & D.font "DejaVu Sans"
@@ -233,7 +233,7 @@ timelineDays
   -> D.Diagram B
 timelineDays params days clocks topLists =
     D.hcat $
-    foreach (days `zip` (clocks `zip` topLists)) $ \(day, (dayClocks, topList)) ->
+    flip map (days `zip` (clocks `zip` topLists)) $ \(day, (dayClocks, topList)) ->
       D.vsep 5
       [ timelineDay params day dayClocks
       , taskList params topList True
@@ -289,8 +289,8 @@ timelineReport params org (from,to) = SVGImage pic
     allDaysDurations :: [(Text, DiffTime)]
     allDaysDurations =
       let allTasks = nub $ map fst $ concat byDayDurations in
-      foreach allTasks $ \task ->
-      (task,) $ sum $ foreach byDayDurations $ \durations ->
+      flip map allTasks $ \task ->
+      (task,) $ sum $ flip map byDayDurations $ \durations ->
       lookupDef (fromInteger 0) task durations
 
     -- split clocks

@@ -49,7 +49,7 @@ main :: IO ()
 main = do
     args@Args{..} <- getNodeOptions =<< getHomeDirectory
     let sev = if debug then Debug else Info
-    setupLogging $ consoleOutB True & lcTermSeverity .~ Just sev
+    setupLogging $ consoleOutB & lcTermSeverity .~ Just sev
     runWorkM (WorkScope configPath xdgOpen) $ do
         logDebug $ "Just started with options: " <> show args
         runOrgStat `catch` topHandler

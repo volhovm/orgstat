@@ -1,5 +1,5 @@
 name:                orgstat
-version:             0.0.3
+version:             0.0.4
 synopsis:            Statistics visualizer for org-mode
 license:             GPL-3
 license-file:        LICENSE
@@ -38,14 +38,14 @@ library
                      , hashable >= 1.2.4.0
                      , lens >= 4.14
                      , linear
-                     , log-warper >= 0.2.1
+                     , log-warper >= 1.1.4
                      , mtl >= 2.2.1
                      , optparse-simple
                      , orgmode-parse
                      , text >= 1.2.2.1
                      , time >= 1.6.0.1
                      , turtle >= 1.2.8
-                     , universum >= 0.2.1
+                     , universum >= 0.5.1.1
                      , yaml >= 0.8.21.1
   hs-source-dirs:      src
   default-language:    Haskell2010
@@ -73,10 +73,10 @@ executable orgstat
                      , exceptions >= 0.8.3
                      , filepath
                      , formatting
-                     , log-warper >= 0.2.1
+                     , log-warper >= 1.1.4
                      , optparse-simple
                      , orgstat
-                     , universum >= 0.2.1
+                     , universum >= 0.5.1.1
   hs-source-dirs:      src/cli
   default-language:    Haskell2010
   ghc-options:         -threaded  -Wall -O2 
@@ -101,7 +101,7 @@ test-suite orgstat-test
                      , time >= 1.6.0.1
                      , text
                      , transformers
-                     , universum >= 0.2.1
+                     , universum >= 0.5.1.1
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   default-language:    Haskell2010
