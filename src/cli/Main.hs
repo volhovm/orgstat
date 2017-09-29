@@ -2,7 +2,6 @@
 
 module Main where
 
-import           Control.Monad.Catch        (catch)
 import           Data.Version               (showVersion)
 import           Options.Applicative.Simple (Parser, help, long, metavar, simpleOptions,
                                              strOption, switch, value)

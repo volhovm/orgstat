@@ -38,14 +38,14 @@ library
                      , hashable >= 1.2.4.0
                      , lens >= 4.14
                      , linear
-                     , log-warper >= 1.1.4
+                     , log-warper >= 1.2.1
                      , mtl >= 2.2.1
                      , optparse-simple
                      , orgmode-parse
                      , text >= 1.2.2.1
                      , time >= 1.6.0.1
                      , turtle >= 1.2.8
-                     , universum >= 0.5.1.1
+                     , universum >= 0.6.1
                      , yaml >= 0.8.21.1
   hs-source-dirs:      src
   default-language:    Haskell2010
