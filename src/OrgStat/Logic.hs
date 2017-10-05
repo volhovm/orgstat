@@ -7,6 +7,9 @@ module OrgStat.Logic
        , runOrgStat
        ) where
 
+import           Universum
+import           Unsafe                      (unsafeHead)
+
 import           Data.List                   (notElem, nub, nubBy)
 import qualified Data.List.NonEmpty          as NE
 import qualified Data.Map                    as M
@@ -19,8 +22,6 @@ import           Data.Time.Calendar.WeekDate (toWeekDate)
 import           System.Directory            (createDirectoryIfMissing)
 import           System.FilePath             ((</>))
 import           System.Wlog                 (logDebug, logInfo)
-import           Universum
-import           Unsafe                      (unsafeHead)
 
 import           OrgStat.Ast                 (Org (..), mergeClocks, orgTitle)
 import           OrgStat.Config              (ConfDate (..), ConfRange (..),
@@ -103,7 +104,7 @@ runOrgStat = do
             logDebug $ "Using range: " <> show fromto
             res <- processTimeline timelineParamsFinal withModifiers fromto
             logInfo $ "Generating report " <> crName <> "..."
-            writeReport reportDir (T.unpack crName) res
+            writeReport (reportDir </> T.unpack crName) res
     whenM (view wXdgOpen) $ do
         logInfo "Opening reports using xdg-open..."
         void $ shell ("for i in $(ls "<>T.pack reportDir<>"/*); do xdg-open $i; done") empty

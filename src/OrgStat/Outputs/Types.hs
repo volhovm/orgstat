@@ -2,12 +2,16 @@
 
 module OrgStat.Outputs.Types
        ( SVGImageOutput (..)
+       , SummaryOutput (..)
        ) where
+
+import           Universum
 
 import           Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude     as D
 
--- Also thing to think about is how we output settings (time ranges
--- etc.) -- on the plot, in the corner, in the file name, as a
--- description file ?
+-- | SVG timeline image.
 newtype SVGImageOutput = SVGImageOutput (D.Diagram B)
+
+-- | Some text (supposed to be single line or something).
+newtype SummaryOutput = SummaryOutput Text
