@@ -28,7 +28,7 @@ import           OrgStat.Config              (ConfDate (..), ConfRange (..),
                                               ConfScope (..), ConfigException (..),
                                               OrgStatConfig (..))
 import           OrgStat.IO                  (readConfig, readOrgFile)
-import           OrgStat.Report              (processTimeline, tpColorSalt, writeReport)
+import           OrgStat.Outputs             (processTimeline, tpColorSalt, writeReport)
 import           OrgStat.Scope               (applyModifiers)
 import           OrgStat.Util                (fromJustM)
 import           OrgStat.WorkMonad           (WorkM, wConfigFile, wXdgOpen)

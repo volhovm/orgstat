@@ -16,10 +16,10 @@ library
                      , OrgStat.Logic
                      , OrgStat.Parser
                      , OrgStat.Scope
-                     , OrgStat.Report
-                     , OrgStat.Report.Types
-                     , OrgStat.Report.Class
-                     , OrgStat.Report.Timeline
+                     , OrgStat.Outputs
+                     , OrgStat.Outputs.Types
+                     , OrgStat.Outputs.Class
+                     , OrgStat.Outputs.Timeline
                      , OrgStat.Util
                      , OrgStat.WorkMonad
   build-depends:       aeson >= 0.11.2.0

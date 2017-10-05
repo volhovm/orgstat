@@ -2,9 +2,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
--- | Timeline reporting. Prouces a svg with columns.
+-- | Timeline reporting output. Prouces a svg with columns.
 
-module OrgStat.Report.Timeline
+module OrgStat.Outputs.Timeline
        ( TimelineParams (..)
        , tpColorSalt
        , tpLegend
@@ -16,22 +16,22 @@ module OrgStat.Report.Timeline
        , processTimeline
        ) where
 
-import           Control.Lens         (makeLenses)
-import           Data.Colour.CIE      (luminance)
-import           Data.Default         (Default (..))
-import           Data.List            (lookup, nub)
-import qualified Data.Text            as T
-import           Data.Time            (Day, DiffTime, LocalTime (..), defaultTimeLocale,
-                                       formatTime, timeOfDayToTime)
-import           Diagrams.Backend.SVG (B)
-import qualified Diagrams.Prelude     as D
+import           Control.Lens          (makeLenses)
+import           Data.Colour.CIE       (luminance)
+import           Data.Default          (Default (..))
+import           Data.List             (lookup, nub)
+import qualified Data.Text             as T
+import           Data.Time             (Day, DiffTime, LocalTime (..), defaultTimeLocale,
+                                        formatTime, timeOfDayToTime)
+import           Diagrams.Backend.SVG  (B)
+import qualified Diagrams.Prelude      as D
 import qualified Prelude
-import           Text.Printf          (printf)
+import           Text.Printf           (printf)
 import           Universum
 
-import           OrgStat.Ast          (Clock (..), Org (..))
-import           OrgStat.Report.Types (SVGImageReport (..))
-import           OrgStat.Util         (addLocalTime, hashColour)
+import           OrgStat.Ast           (Clock (..), Org (..))
+import           OrgStat.Outputs.Types (SVGImageOutput (..))
+import           OrgStat.Util          (addLocalTime, hashColour)
 
 
 ----------------------------------------------------------------------------
@@ -263,8 +263,8 @@ taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd label
       where
         (hours, minutes) = diffTimeMinutes time `divMod` 60
 
-timelineReport :: TimelineParams -> Org -> (LocalTime, LocalTime) -> SVGImageReport
-timelineReport params org (from,to) = SVGImage pic
+timelineReport :: TimelineParams -> Org -> (LocalTime, LocalTime) -> SVGImageOutput
+timelineReport params org (from,to) = SVGImageOutput pic
   where
     lookupDef :: Eq a => b -> a -> [(a, b)] -> b
     lookupDef d a xs = fromMaybe d $ lookup a xs
@@ -311,5 +311,5 @@ timelineReport params org (from,to) = SVGImage pic
 
 processTimeline
     :: (MonadThrow m)
-    => TimelineParams -> Org -> (LocalTime, LocalTime) -> m SVGImageReport
+    => TimelineParams -> Org -> (LocalTime, LocalTime) -> m SVGImageOutput
 processTimeline params org fromto = pure $ timelineReport params org fromto
