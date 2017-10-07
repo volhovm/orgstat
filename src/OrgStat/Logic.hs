@@ -8,11 +8,9 @@ module OrgStat.Logic
        ) where
 
 import           Universum
-import           Unsafe                      (unsafeHead)
 
-import           Data.List                   (notElem, nub, nubBy)
+import           Control.Lens                (at, views, (.=))
 import qualified Data.List.NonEmpty          as NE
-import qualified Data.Map                    as M
 import qualified Data.Text                   as T
 import           Data.Time                   (LocalTime (..), TimeOfDay (..), addDays,
                                               defaultTimeLocale, formatTime, getZonedTime,
@@ -23,18 +21,17 @@ import           System.Directory            (createDirectoryIfMissing)
 import           System.FilePath             ((</>))
 import           System.Wlog                 (logDebug, logInfo)
 
-import           OrgStat.Ast                 (Org (..), mergeClocks, orgTitle)
-import           OrgStat.Config              (ConfDate (..), ConfRange (..),
-                                              ConfReport (..), ConfReportType (..),
-                                              ConfScope (..), ConfigException (..),
-                                              OrgStatConfig (..))
-import           OrgStat.IO                  (readConfig, readOrgFile)
+import           OrgStat.Ast                 (Org (..), cutFromTo, mergeClocks, orgTitle)
+import           OrgStat.Config              (ConfDate (..), ConfOutput (..),
+                                              ConfOutputType (..), ConfRange (..),
+                                              ConfReport (..), ConfScope (..),
+                                              ConfigException (..), OrgStatConfig (..))
+import           OrgStat.IO                  (readOrgFile)
 import           OrgStat.Outputs             (processTimeline, tpColorSalt, writeReport)
 import           OrgStat.Scope               (applyModifiers)
-import           OrgStat.Util                (fromJustM)
-import           OrgStat.WorkMonad           (WorkM, wConfigFile, wXdgOpen)
+import           OrgStat.WorkMonad           (WorkM, wcConfig, wcXdgOpen, wdReadFiles,
+                                              wdResolvedReports, wdResolvedScopes)
 import           Turtle                      (shell)
-
 
 -- Converts config range to a pair of 'UTCTime', right bound not inclusive.
 convertRange :: (MonadIO m) => ConfRange -> m (LocalTime, LocalTime)
@@ -73,10 +70,72 @@ convertRange range = case range of
     fromConfDate ConfNow       = curTime
     fromConfDate (ConfLocal x) = pure x
 
+-- | Resolves org file: reads from path and puts into state or just
+-- gets out of state if was read before.
+resolveInputOrg :: FilePath -> WorkM (Text, Org)
+resolveInputOrg fp = use (wdReadFiles . at fp) >>= \case
+    Just x -> pure x
+    Nothing -> do
+        todoKeywords <- views wcConfig confTodoKeywords
+        o <- readOrgFile todoKeywords fp
+        wdReadFiles . at fp .= Just o
+        pure o
+
+-- | Return scope with requested name or fail. It will be either
+-- constructed on the spot or taken from the state if it had been
+-- created previously.
+resolveScope :: Text -> WorkM Org
+resolveScope scopeName = use (wdResolvedScopes . at scopeName) >>= \case
+    Just x -> pure x
+    Nothing -> constructScope
+  where
+    constructScope = do
+        let filterScopes = filter (\x -> csName x == scopeName)
+        views wcConfig (filterScopes . confScopes) >>= \case
+            [] ->
+                throwM $ ConfigLogicException $
+                "Scope "<> scopeName <> " is not declared"
+            [sc] -> resolveFoundScope sc
+            scopes ->
+                throwM $ ConfigLogicException $
+                "Multple scopes with name "<> scopeName <>
+                " are declared " <> show scopes
+    resolveFoundScope ConfScope{..} = do
+        orgs <- NE.toList <$> forM csPaths resolveInputOrg
+        let orgTop = Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) orgs
+        wdResolvedScopes . at scopeName .= Just orgTop
+        pure orgTop
+
+-- | Same as resolveScope but related to reports.
+resolveReport :: Text -> WorkM Org
+resolveReport reportName = use (wdResolvedReports . at reportName) >>= \case
+    Just x -> pure x
+    Nothing -> constructReport
+  where
+    constructReport = do
+        let filterReports = filter (\x -> crName x == reportName)
+        views wcConfig (filterReports . confReports) >>= \case
+            [] ->
+                throwM $ ConfigLogicException $
+                "Report " <> reportName <> " is not declared"
+            [rep] -> resolveFoundReport rep
+            reports ->
+                 throwM $ ConfigLogicException $
+                "Multple reports with name "<> reportName <>
+                " are declared " <> show reports
+    resolveFoundReport ConfReport{..} = do
+        orgTop <- resolveScope crScope
+        fromto <- convertRange crRange
+        withModifiers <-
+            either throwM pure $
+            applyModifiers orgTop crModifiers
+        let finalOrg = cutFromTo fromto $ mergeClocks withModifiers
+        wdResolvedReports . at reportName .= Just finalOrg
+        pure finalOrg
 
 runOrgStat :: WorkM ()
 runOrgStat = do
-    conf@OrgStatConfig{..} <- readConfig =<< view wConfigFile
+    conf@OrgStatConfig{..} <- view wcConfig
     logDebug $ "Config: \n" <> show conf
 
     curTime <- liftIO getZonedTime
@@ -84,54 +143,17 @@ runOrgStat = do
     liftIO $ createDirectoryIfMissing True reportDir
     logInfo $ "This report set will be put into: " <> T.pack reportDir
 
-    logInfo $ "Parsing files..."
-    allParsedOrgs <- parseNeededFiles conf
-    forM_ confReports $ \ConfReport{..} -> case crType of
-        Timeline {..} -> do
-            logDebug $ "Processing report " <> crName
-            scope <- getScope conf timelineScope crName
-            let scopeFiles = NE.toList $ csPaths scope
-                neededOrgs =
-                    map (\f -> fromMaybe (error $ scopeNotFound (T.pack f) crName) $
-                               M.lookup f allParsedOrgs)
-                        scopeFiles
-            let orgTop = Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) neededOrgs
-            withModifiers <- mergeClocks <$> applyMods crModifiers orgTop
-            let timelineParamsFinal =
-                    (confBaseTimelineParams <> timelineParams) & tpColorSalt .~ confColorSalt
-            logDebug $ "Launching timeline report with params: " <> show timelineParamsFinal
-            fromto <- convertRange timelineRange
-            logDebug $ "Using range: " <> show fromto
-            res <- processTimeline timelineParamsFinal withModifiers fromto
-            logInfo $ "Generating report " <> crName <> "..."
-            writeReport (reportDir </> T.unpack crName) res
-    whenM (view wXdgOpen) $ do
+    forM_ confOutputs $ \ConfOutput{..} -> do
+        logDebug $ "Processing output " <> coName <> " for report " <> coReport
+        resolved <- resolveReport coReport
+        case coType of
+            TimelineOutput params -> do
+                let timelineParamsFinal =
+                        (confBaseTimelineParams <> params) & tpColorSalt .~ confColorSalt
+                res <- processTimeline timelineParamsFinal resolved
+                logInfo $ "Generating timeline report " <> coName <> "..."
+                writeReport (reportDir </> T.unpack coName) res
+
+    whenM (view wcXdgOpen) $ do
         logInfo "Opening reports using xdg-open..."
         void $ shell ("for i in $(ls "<>T.pack reportDir<>"/*); do xdg-open $i; done") empty
-  where
-    applyMods mods o = case applyModifiers o mods of
-        Left k  -> throwM k
-        Right r -> pure r
-    scopeNotFound scope report =
-        mconcat ["Scope ", scope, " is requested for config report ",
-                 report, ", but is not present in scopes section"]
-    throwLogic = throwM . ConfigLogicException
-    getScope OrgStatConfig{..} scopeName reportName =
-        fromJustM (throwLogic $ scopeNotFound scopeName reportName) $
-        pure $ find ((== scopeName) . csName) confScopes
-    getScopes (Timeline _ s _) = [s]
-    -- Reads needed org files and returns a map
-    parseNeededFiles :: OrgStatConfig -> WorkM (Map FilePath (Text, Org))
-    parseNeededFiles conf@OrgStatConfig{..} = do
-        let neededScopes =
-                nubBy ((==) `on` snd) $
-                concatMap (\cr -> map (crName cr,) $ getScopes (crType cr)) confReports
-        let availableScopes = map csName confScopes
-        let notAvailableScopes = filter (\(_,s) -> s `notElem` availableScopes) neededScopes
-        unless (null notAvailableScopes) $ do
-            let (r,s) = unsafeHead notAvailableScopes
-            throwLogic $ scopeNotFound s r
-        neededFiles <-
-            nub . concatMap (NE.toList . csPaths) <$>
-            mapM (\(r,s) -> getScope conf s r) neededScopes
-        fmap M.fromList $ forM neededFiles (\f -> (f,) <$> readOrgFile confTodoKeywords f)

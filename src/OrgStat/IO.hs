@@ -70,9 +70,8 @@ readOrgFile todoKeywords fp = do
         pure output
 
 -- | Reads yaml config
-readConfig :: (MonadIO m, MonadThrow m, WithLogger m) => FilePath -> m OrgStatConfig
+readConfig :: (MonadIO m, MonadThrow m) => FilePath -> m OrgStatConfig
 readConfig fp = do
-    logDebug $ "Reading config file from: " <> fpt
     unlessM (liftIO $ doesFileExist fp) $
         throwM $ OrgIOException $ "Config file " <> fpt <> " doesn't exist"
     res <- liftIO $ BS.readFile fp

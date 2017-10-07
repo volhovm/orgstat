@@ -9,7 +9,7 @@ import           Universum
 import qualified Data.Text.IO          as T
 import qualified Diagrams.Backend.SVG  as DB
 import qualified Diagrams.Prelude      as D
-import           System.FilePath       (replaceExtension, (</>))
+import           System.FilePath       (replaceExtension)
 
 import           OrgStat.Outputs.Types (SVGImageOutput (..), SummaryOutput (..))
 

@@ -7,16 +7,17 @@
 
 module OrgStat.Config
        ( ConfigException (..)
-       , ConfDate(..)
-       , ConfRange(..)
-       , ConfReportType(..)
+       , ConfDate (..)
+       , ConfRange (..)
+       , ConfOutputType (..)
+       , ConfOutput (..)
        , ConfScope (..)
        , ConfReport (..)
        , OrgStatConfig (..)
        ) where
 
-import           Data.Aeson               (FromJSON (..), Value (Object, String), (.!=),
-                                           (.:), (.:?))
+import           Data.Aeson               (FromJSON (..), Value (Object, String),
+                                           withObject, (.!=), (.:), (.:?))
 import           Data.Aeson.Types         (typeMismatch)
 import           Data.Default             (def)
 import           Data.List.NonEmpty       (NonEmpty)
@@ -51,26 +52,33 @@ data ConfRange
     | ConfBlockMonth !Integer
     deriving (Show)
 
-data ConfReportType = Timeline
-    { timelineRange  :: !ConfRange
-    , timelineScope  :: !Text
-    , timelineParams :: !TimelineParams
-    } deriving (Show)
+data ConfOutputType
+    = TimelineOutput !TimelineParams
+--    | SummaryOutput !Text -- formatter
+    deriving (Show)
 
 data ConfScope = ConfScope
     { csName  :: !Text              -- default is "default"
     , csPaths :: !(NonEmpty FilePath)
     } deriving (Show)
 
+data ConfOutput = ConfOutput
+    { coType   :: !ConfOutputType
+    , coName   :: !Text
+    , coReport :: !Text
+    } deriving (Show)
+
 data ConfReport = ConfReport
-    { crType      :: !ConfReportType -- includes config
-    , crName      :: !Text
+    { crName      :: !Text
+    , crScope     :: !Text
+    , crRange     :: !ConfRange
     , crModifiers :: ![ScopeModifier]
     } deriving (Show)
 
 data OrgStatConfig = OrgStatConfig
     { confScopes             :: ![ConfScope]
     , confReports            :: ![ConfReport]
+    , confOutputs            :: ![ConfOutput]
     , confBaseTimelineParams :: !TimelineParams
     , confTodoKeywords       :: ![Text]
     , confOutputDir          :: !FilePath -- default is "./orgstat"
@@ -123,7 +131,7 @@ instance FromJSON ConfRange where
     parseJSON invalid          = typeMismatch "ConfRange" invalid
 
 instance FromJSON TimelineParams where
-    parseJSON (Object v) = do
+    parseJSON = withObject "TimelineParams" $ \v -> do
         legend <- v .:? "legend"
         topDay <- v .:? "topDay"
         colWidth <- v .:? "colWidth"
@@ -134,36 +142,38 @@ instance FromJSON TimelineParams where
                    & tpColumnWidth ??~ colWidth
                    & tpColumnHeight ??~ colHeight
                    & tpBackground ??~ (T.strip <$> bgColorRaw >>= parseColour @Text)
-    parseJSON invalid    = typeMismatch "TimelineParams" invalid
 
-instance FromJSON ConfReportType where
-    parseJSON o@(Object v) = do
-        v .: "type" >>= \case
-            (String "timeline") ->
-                Timeline <$> v .: "range"
-                         <*> v .:? "scope" .!= "default"
-                         <*> parseJSON o
+instance FromJSON ConfOutputType where
+    parseJSON = withObject "ConfOutputType" $ \o ->
+        o .: "type" >>= \case
+            (String "timeline") -> TimelineOutput <$> parseJSON (Object o)
             other -> fail $ "Unsupported scope modifier type: " ++ show other
-    parseJSON invalid    = typeMismatch "ConfReportType" invalid
+
+instance FromJSON ConfOutput where
+    parseJSON = withObject "ConfOutput" $ \o -> do
+        coName   <- o .: "name"
+        coReport <- o .: "report"
+        coType  <- parseJSON (Object o)
+        pure $ ConfOutput{..}
 
 instance FromJSON ConfScope where
-    parseJSON (Object v) = do
-        ConfScope <$> v .:? "name" .!= "default" <*> v .: "paths"
-    parseJSON invalid    = typeMismatch "ConfScope" invalid
+    parseJSON = withObject "ConfScope" $ \o ->
+        ConfScope <$> o .:? "name" .!= "default"
+                  <*> o .: "paths"
 
 instance FromJSON ConfReport where
-    parseJSON (Object v) = do
-        ConfReport <$> v .: "type"
-                   <*> v .:? "name" .!= "default"
-                   <*> v .:? "modifiers" .!= []
-    parseJSON invalid    = typeMismatch "ConfReport" invalid
+    parseJSON = withObject "ConfReport" $ \o ->
+        ConfReport <$> o .: "name"
+                   <*> o .: "scope"
+                   <*> o .: "range"
+                   <*> o .:? "modifiers" .!= []
 
 instance FromJSON OrgStatConfig where
-    parseJSON (Object v) = do
-        OrgStatConfig <$> v .: "scopes"
-                      <*> v .: "reports"
-                      <*> v .:? "timelineDefault" .!= def
-                      <*> v .:? "todoKeywords" .!= []
-                      <*> v .:? "output" .!= "./orgstat"
-                      <*> v .:? "colorSalt" .!= 0
-    parseJSON invalid    = typeMismatch "ConfReport" invalid
+    parseJSON = withObject "OrgStatConfig" $ \o ->
+        OrgStatConfig <$> o .: "scopes"
+                      <*> o .: "reports"
+                      <*> o .: "outputs"
+                      <*> o .:? "timelineDefault" .!= def
+                      <*> o .:? "todoKeywords" .!= []
+                      <*> o .:? "output" .!= "./orgstat"
+                      <*> o .:? "colorSalt" .!= 0

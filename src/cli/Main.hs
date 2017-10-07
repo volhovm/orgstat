@@ -12,8 +12,9 @@ import           System.Wlog                (Severity (..), consoleOutB, lcTermS
                                              logDebug, logError, setupLogging)
 import           Universum
 
+import           OrgStat.IO                 (readConfig)
 import           OrgStat.Logic              (runOrgStat)
-import           OrgStat.WorkMonad          (WorkScope (..), runWorkM)
+import           OrgStat.WorkMonad          (WorkConfig (..), runWorkM)
 
 data Args = Args
     { configPath :: !FilePath
@@ -49,7 +50,8 @@ main = do
     args@Args{..} <- getNodeOptions =<< getHomeDirectory
     let sev = if debug then Debug else Info
     setupLogging $ consoleOutB & lcTermSeverity .~ Just sev
-    runWorkM (WorkScope configPath xdgOpen) $ do
+    config <- readConfig configPath
+    runWorkM (WorkConfig config xdgOpen) $ do
         logDebug $ "Just started with options: " <> show args
         runOrgStat `catch` topHandler
   where

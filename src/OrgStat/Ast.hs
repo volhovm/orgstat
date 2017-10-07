@@ -10,6 +10,8 @@ module OrgStat.Ast
        , orgTags
        , orgClocks
        , orgSubtrees
+
+       , cutFromTo
        , fmapOrgLens
        , traverseTree
        , atDepth
@@ -50,11 +52,27 @@ makeLenses ''Org
 -- Helpers and lenses
 ----------------------------------------------------------------------------
 
+cutFromTo :: (LocalTime, LocalTime) -> Org -> Org
+cutFromTo (from, to) o
+    | from >= to = error "cutFromTo: from >= to"
+    | otherwise = o & traverseTree %~ filterClocks
+  where
+    -- Cuts clock relatively to from/to or discards if it's not in the
+    -- interval.
+    fitClock :: Clock -> Maybe Clock
+    fitClock Clock{..} = do
+        guard $ cFrom <= to
+        guard $ cTo >= from
+        pure $ Clock (max cFrom from) (min cTo to)
+
+    filterClocks :: Org -> Org
+    filterClocks = orgClocks %~ mapMaybe fitClock
+
 -- | Functor-like 'fmap' on field chosen by lens.
 fmapOrgLens :: ASetter' Org a -> (a -> a) -> Org -> Org
 fmapOrgLens l f o = o & l %~ f & orgSubtrees %~ map (fmapOrgLens l f)
 
--- | Traverses node and subnodes, all recursively
+-- | Traverses node and subnodes, all recursively. Bottom-top.
 traverseTree :: Traversal' Org Org
 traverseTree f o = o'
   where

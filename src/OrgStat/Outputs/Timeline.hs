@@ -263,11 +263,14 @@ taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd label
       where
         (hours, minutes) = diffTimeMinutes time `divMod` 60
 
-timelineReport :: TimelineParams -> Org -> (LocalTime, LocalTime) -> SVGImageOutput
-timelineReport params org (from,to) = SVGImageOutput pic
+timelineReport :: TimelineParams -> Org  -> SVGImageOutput
+timelineReport params org = SVGImageOutput pic
   where
     lookupDef :: Eq a => b -> a -> [(a, b)] -> b
     lookupDef d a xs = fromMaybe d $ lookup a xs
+
+    -- These two should be taken from the Org itself (min/max).
+    (from,to) = undefined
 
     -- period to show. Right border is -1min, we assume it's non-inclusive
     daysToShow = [localDay from ..
@@ -311,5 +314,5 @@ timelineReport params org (from,to) = SVGImageOutput pic
 
 processTimeline
     :: (MonadThrow m)
-    => TimelineParams -> Org -> (LocalTime, LocalTime) -> m SVGImageOutput
-processTimeline params org fromto = pure $ timelineReport params org fromto
+    => TimelineParams -> Org -> m SVGImageOutput
+processTimeline params org = pure $ timelineReport params org
