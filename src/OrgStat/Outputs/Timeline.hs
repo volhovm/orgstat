@@ -29,7 +29,7 @@ import qualified Prelude
 import           Text.Printf           (printf)
 import           Universum
 
-import           OrgStat.Ast           (Clock (..), Org (..))
+import           OrgStat.Ast           (Clock (..), Org (..), orgClocks, traverseTree)
 import           OrgStat.Outputs.Types (SVGImageOutput (..))
 import           OrgStat.Util          (addLocalTime, hashColour)
 
@@ -263,14 +263,16 @@ taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd label
       where
         (hours, minutes) = diffTimeMinutes time `divMod` 60
 
-timelineReport :: TimelineParams -> Org  -> SVGImageOutput
+timelineReport :: TimelineParams -> Org -> SVGImageOutput
 timelineReport params org = SVGImageOutput pic
   where
     lookupDef :: Eq a => b -> a -> [(a, b)] -> b
     lookupDef d a xs = fromMaybe d $ lookup a xs
 
     -- These two should be taken from the Org itself (min/max).
-    (from,to) = undefined
+    (from,to) =
+        let c = concat $ org ^.. traverseTree . orgClocks
+        in (minimum (map cFrom c), maximum (map cTo c))
 
     -- period to show. Right border is -1min, we assume it's non-inclusive
     daysToShow = [localDay from ..

@@ -164,7 +164,7 @@ instance FromJSON ConfScope where
 instance FromJSON ConfReport where
     parseJSON = withObject "ConfReport" $ \o ->
         ConfReport <$> o .: "name"
-                   <*> o .: "scope"
+                   <*> o .:? "scope" .!= "default"
                    <*> o .: "range"
                    <*> o .:? "modifiers" .!= []
 
