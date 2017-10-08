@@ -17,7 +17,7 @@ module OrgStat.Config
        ) where
 
 import           Data.Aeson            (FromJSON (..), Value (Object, String), withObject,
-                                        (.!=), (.:), (.:?))
+                                        withText, (.!=), (.:), (.:?))
 import           Data.Aeson.Types      (typeMismatch)
 import           Data.Default          (def)
 import           Data.List.NonEmpty    (NonEmpty)
@@ -26,7 +26,7 @@ import           Data.Time             (LocalTime)
 import           Data.Time.Format      (defaultTimeLocale, parseTimeM)
 import           Universum
 
-import           OrgStat.Outputs.Types (SummaryParams, TimelineParams, tpBackground,
+import           OrgStat.Outputs.Types (SummaryParams (..), TimelineParams, tpBackground,
                                         tpColumnHeight, tpColumnWidth, tpLegend, tpTopDay)
 import           OrgStat.Scope         (AstPath (..), ScopeModifier (..))
 import           OrgStat.Util          (parseColour, (??~))
@@ -86,16 +86,15 @@ data OrgStatConfig = OrgStatConfig
     } deriving (Show)
 
 instance FromJSON AstPath where
-    parseJSON (String s) = pure $ AstPath $ filter (not . T.null) $ T.splitOn "/" s
-    parseJSON invalid    = typeMismatch "AstPath" invalid
+    parseJSON = withText "AstPath" $ \s ->
+        pure $ AstPath $ filter (not . T.null) $ T.splitOn "/" s
 
 instance FromJSON ScopeModifier where
-    parseJSON (Object v) = do
-        v .: "type" >>= \case
-            (String "prune") -> ModPruneSubtree <$> v .: "path" <*> v .:? "depth" .!= 0
-            (String "select") -> ModSelectSubtree <$> v .: "path"
+    parseJSON  = withObject "ScopeModifier" $ \o -> do
+        o .: "type" >>= \case
+            (String "prune") -> ModPruneSubtree <$> o .: "path" <*> o .:? "depth" .!= 0
+            (String "select") -> ModSelectSubtree <$> o .: "path"
             other -> fail $ "Unsupported scope modifier type: " ++ show other
-    parseJSON invalid    = typeMismatch "ScopeModifier" invalid
 
 instance FromJSON ConfDate where
     parseJSON (String "now") = pure $ ConfNow
@@ -150,7 +149,10 @@ instance FromJSON ConfOutputType where
                 toReport <- o .: "report"
                 toParams <- parseJSON (Object o)
                 pure $ TimelineOutput {..}
-            other -> fail $ "Unsupported scope modifier type: " ++ show other
+            (String "summary") -> do
+                soTemplate <- o .: "template"
+                pure $ SummaryOutput $ SummaryParams soTemplate
+            other -> fail $ "Unsupported output type: " ++ show other
 
 instance FromJSON ConfOutput where
     parseJSON = withObject "ConfOutput" $ \o -> do
@@ -177,5 +179,5 @@ instance FromJSON OrgStatConfig where
                       <*> o .: "outputs"
                       <*> o .:? "timelineDefault" .!= def
                       <*> o .:? "todoKeywords" .!= []
-                      <*> o .:? "output" .!= "./orgstat"
+                      <*> (o .:? "outputDir" <|> o .:? "output") .!= "./orgstat"
                       <*> o .:? "colorSalt" .!= 0

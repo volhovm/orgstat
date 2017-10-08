@@ -11,6 +11,7 @@ module OrgStat.Ast
        , orgClocks
        , orgSubtrees
 
+       , clockDuration
        , cutFromTo
        , fmapOrgLens
        , traverseTree
@@ -19,7 +20,8 @@ module OrgStat.Ast
        ) where
 
 import           Control.Lens (ASetter', makeLenses)
-import           Data.Time    (LocalTime, diffUTCTime, localTimeToUTC, utc)
+import           Data.Time    (LocalTime, NominalDiffTime, diffUTCTime, localTimeToUTC,
+                               localTimeToUTC, utc)
 
 import           Universum
 
@@ -51,6 +53,10 @@ makeLenses ''Org
 ----------------------------------------------------------------------------
 -- Helpers and lenses
 ----------------------------------------------------------------------------
+
+clockDuration :: Clock -> NominalDiffTime
+clockDuration (Clock (localTimeToUTC utc -> from) (localTimeToUTC utc -> to)) =
+    diffUTCTime to from
 
 cutFromTo :: (LocalTime, LocalTime) -> Org -> Org
 cutFromTo (from, to) o

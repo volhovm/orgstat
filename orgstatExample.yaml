@@ -52,8 +52,8 @@ reports:
       - type: prune
         path: /
         depth: 2
-# Output folder. Subfolder for report will be auto-generated.
-output: /home/username/reps/orgstat/
+# Output folder. Subfolder for report will be auto-generated. 
+outputDir: /home/username/reps/orgstat/
 # Must contain all todo keywords you use in files, because
 # otherwise parsed headings' titles will contain them prepended.
 todoKeywords: [ TODO, STARTED, WAITING, DONE, CANCELED ]

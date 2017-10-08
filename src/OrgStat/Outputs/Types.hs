@@ -80,6 +80,6 @@ newtype SummaryOutput = SummaryOutput Text
 
 -- | Parameters of the summary output
 data SummaryParams = SummaryParams
-    { spFormatter :: !Text
+    { spTemplate :: !Text
       -- ^ Formatting template.
     } deriving Show
