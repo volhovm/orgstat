@@ -12,12 +12,14 @@ cabal-version:       >=1.10
 library
   exposed-modules:     OrgStat.Ast
                      , OrgStat.Config
+                     , OrgStat.Helpers
                      , OrgStat.IO
                      , OrgStat.Logic
                      , OrgStat.Parser
                      , OrgStat.Scope
                      , OrgStat.Outputs
                      , OrgStat.Outputs.Types
+                     , OrgStat.Outputs.Summary
                      , OrgStat.Outputs.Class
                      , OrgStat.Outputs.Timeline
                      , OrgStat.Util

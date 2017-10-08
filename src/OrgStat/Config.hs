@@ -16,20 +16,20 @@ module OrgStat.Config
        , OrgStatConfig (..)
        ) where
 
-import           Data.Aeson               (FromJSON (..), Value (Object, String),
-                                           withObject, (.!=), (.:), (.:?))
-import           Data.Aeson.Types         (typeMismatch)
-import           Data.Default             (def)
-import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.Text                as T
-import           Data.Time                (LocalTime)
-import           Data.Time.Format         (defaultTimeLocale, parseTimeM)
+import           Data.Aeson            (FromJSON (..), Value (Object, String), withObject,
+                                        (.!=), (.:), (.:?))
+import           Data.Aeson.Types      (typeMismatch)
+import           Data.Default          (def)
+import           Data.List.NonEmpty    (NonEmpty)
+import qualified Data.Text             as T
+import           Data.Time             (LocalTime)
+import           Data.Time.Format      (defaultTimeLocale, parseTimeM)
 import           Universum
 
-import           OrgStat.Outputs.Timeline (TimelineParams, tpBackground, tpColumnHeight,
-                                           tpColumnWidth, tpLegend, tpTopDay)
-import           OrgStat.Scope            (AstPath (..), ScopeModifier (..))
-import           OrgStat.Util             (parseColour, (??~))
+import           OrgStat.Outputs.Types (SummaryParams, TimelineParams, tpBackground,
+                                        tpColumnHeight, tpColumnWidth, tpLegend, tpTopDay)
+import           OrgStat.Scope         (AstPath (..), ScopeModifier (..))
+import           OrgStat.Util          (parseColour, (??~))
 
 -- | Exception type for everything bad that happens with config,
 -- starting from parsing to logic errors.
@@ -53,8 +53,9 @@ data ConfRange
     deriving (Show)
 
 data ConfOutputType
-    = TimelineOutput !TimelineParams
---    | SummaryOutput !Text -- formatter
+    = TimelineOutput { toParams :: !TimelineParams
+                     , toReport :: !Text }
+    | SummaryOutput !SummaryParams
     deriving (Show)
 
 data ConfScope = ConfScope
@@ -63,9 +64,8 @@ data ConfScope = ConfScope
     } deriving (Show)
 
 data ConfOutput = ConfOutput
-    { coType   :: !ConfOutputType
-    , coName   :: !Text
-    , coReport :: !Text
+    { coType :: !ConfOutputType
+    , coName :: !Text
     } deriving (Show)
 
 data ConfReport = ConfReport
@@ -146,13 +146,15 @@ instance FromJSON TimelineParams where
 instance FromJSON ConfOutputType where
     parseJSON = withObject "ConfOutputType" $ \o ->
         o .: "type" >>= \case
-            (String "timeline") -> TimelineOutput <$> parseJSON (Object o)
+            (String "timeline") -> do
+                toReport <- o .: "report"
+                toParams <- parseJSON (Object o)
+                pure $ TimelineOutput {..}
             other -> fail $ "Unsupported scope modifier type: " ++ show other
 
 instance FromJSON ConfOutput where
     parseJSON = withObject "ConfOutput" $ \o -> do
         coName   <- o .: "name"
-        coReport <- o .: "report"
         coType  <- parseJSON (Object o)
         pure $ ConfOutput{..}
 
