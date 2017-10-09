@@ -18,10 +18,11 @@ library
                      , OrgStat.Parser
                      , OrgStat.Scope
                      , OrgStat.Outputs
-                     , OrgStat.Outputs.Types
-                     , OrgStat.Outputs.Summary
+                     , OrgStat.Outputs.Block
                      , OrgStat.Outputs.Class
+                     , OrgStat.Outputs.Summary
                      , OrgStat.Outputs.Timeline
+                     , OrgStat.Outputs.Types
                      , OrgStat.Util
                      , OrgStat.WorkMonad
   build-depends:       aeson >= 0.11.2.0

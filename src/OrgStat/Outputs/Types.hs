@@ -10,10 +10,13 @@ module OrgStat.Outputs.Types
        , tpColumnWidth
        , tpColumnHeight
        , tpBackground
-
        , TimelineOutput (..)
-       , SummaryOutput (..)
+
        , SummaryParams (..)
+       , SummaryOutput (..)
+
+       , BlockParams (..)
+       , BlockOutput (..)
        ) where
 
 import           Universum
@@ -75,11 +78,23 @@ newtype TimelineOutput = TimelineOutput (D.Diagram B)
 -- Summary
 ----------------------------------------------------------------------------
 
--- | Some text (supposed to be single line or something).
-newtype SummaryOutput = SummaryOutput Text
-
 -- | Parameters of the summary output
 data SummaryParams = SummaryParams
     { spTemplate :: !Text
       -- ^ Formatting template.
     } deriving Show
+
+-- | Some text (supposed to be single line or something).
+newtype SummaryOutput = SummaryOutput Text
+
+----------------------------------------------------------------------------
+-- Block
+----------------------------------------------------------------------------
+
+-- | Parameters for block output. Stub (for now).
+data BlockParams = BlockParams
+    {
+    } deriving (Show)
+
+-- | Output of block type is text file, basically.
+newtype BlockOutput = BlockOutput Text

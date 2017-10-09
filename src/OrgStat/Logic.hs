@@ -18,8 +18,8 @@ import           Turtle            (shell)
 import           OrgStat.Config    (ConfOutput (..), ConfOutputType (..),
                                     OrgStatConfig (..))
 import           OrgStat.Helpers   (resolveReport)
-import           OrgStat.Outputs   (genSummaryOutput, processTimeline, tpColorSalt,
-                                    writeReport)
+import           OrgStat.Outputs   (genBlockOutput, genSummaryOutput, processTimeline,
+                                    tpColorSalt, writeReport)
 import           OrgStat.WorkMonad (WorkM, wcConfig, wcXdgOpen)
 
 -- | Main application logic.
@@ -34,7 +34,7 @@ runOrgStat = do
     logInfo $ "This report set will be put into: " <> T.pack reportDir
 
     forM_ confOutputs $ \ConfOutput{..} -> do
-        logDebug $ "Processing output " <> coName
+        logInfo $ "Processing output " <> coName
         let prePath = reportDir </> T.unpack coName
         case coType of
             TimelineOutput {..} -> do
@@ -47,6 +47,10 @@ runOrgStat = do
             SummaryOutput params -> do
                 summary <- genSummaryOutput params
                 writeReport prePath summary
+            BlockOutput {..} -> do
+                resolved <- resolveReport boReport
+                let res = genBlockOutput boParams resolved
+                writeReport prePath res
     whenM (view wcXdgOpen) $ do
         logInfo "Opening reports using xdg-open..."
         void $ shell ("for i in $(ls "<>T.pack reportDir<>"/*); do xdg-open $i; done") empty

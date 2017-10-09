@@ -13,6 +13,7 @@ import           OrgStat.Ast                      (orgTotalDuration)
 import           OrgStat.Config                   (confReports, crName)
 import           OrgStat.Helpers                  (resolveReport)
 import           OrgStat.Outputs.Types            (SummaryOutput (..), SummaryParams (..))
+import           OrgStat.Util                     (timeF)
 import           OrgStat.WorkMonad                (WorkM, wcConfig)
 
 
@@ -49,9 +50,5 @@ genSummaryOutput SummaryParams{..} = do
         OtherInfo t -> pure t
         ReportTemplate reportName -> do
             report <- resolveReport reportName
-            let totalTimeMin :: Integer
-                totalTimeMin = round $ (/ 60) $ toRational $ orgTotalDuration report
-            let hours = totalTimeMin `div` 60
-            let minutes = totalTimeMin `mod` 60
-            pure $ show hours <> ":" <> show minutes
+            pure $ timeF $ orgTotalDuration report
     pure $ SummaryOutput res

@@ -26,8 +26,9 @@ import           Data.Time             (LocalTime)
 import           Data.Time.Format      (defaultTimeLocale, parseTimeM)
 import           Universum
 
-import           OrgStat.Outputs.Types (SummaryParams (..), TimelineParams, tpBackground,
-                                        tpColumnHeight, tpColumnWidth, tpLegend, tpTopDay)
+import           OrgStat.Outputs.Types (BlockParams (..), SummaryParams (..),
+                                        TimelineParams, tpBackground, tpColumnHeight,
+                                        tpColumnWidth, tpLegend, tpTopDay)
 import           OrgStat.Scope         (AstPath (..), ScopeModifier (..))
 import           OrgStat.Util          (parseColour, (??~))
 
@@ -56,6 +57,8 @@ data ConfOutputType
     = TimelineOutput { toParams :: !TimelineParams
                      , toReport :: !Text }
     | SummaryOutput !SummaryParams
+    | BlockOutput { boParams :: !BlockParams
+                  , boReport :: !Text }
     deriving (Show)
 
 data ConfScope = ConfScope
@@ -153,6 +156,10 @@ instance FromJSON ConfOutputType where
             (String "summary") -> do
                 soTemplate <- o .: "template"
                 pure $ SummaryOutput $ SummaryParams soTemplate
+            (String "block") -> do
+                boReport <- o .: "report"
+                let boParams = BlockParams
+                pure $ BlockOutput {..}
             other -> fail $ "Unsupported output type: " ++ show other
 
 instance FromJSON ConfOutput where
