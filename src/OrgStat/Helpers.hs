@@ -5,6 +5,7 @@ module OrgStat.Helpers
        , resolveInputOrg
        , resolveScope
        , resolveReport
+       , resolveOutput
        ) where
 
 import           Universum
@@ -18,9 +19,10 @@ import           Data.Time.Calendar          (addGregorianMonthsRollOver)
 import           Data.Time.Calendar.WeekDate (toWeekDate)
 
 import           OrgStat.Ast                 (Org (..), cutFromTo, mergeClocks, orgTitle)
-import           OrgStat.Config              (ConfDate (..), ConfRange (..),
-                                              ConfReport (..), ConfScope (..),
-                                              ConfigException (..), OrgStatConfig (..))
+import           OrgStat.Config              (ConfDate (..), ConfOutput (..),
+                                              ConfRange (..), ConfReport (..),
+                                              ConfScope (..), ConfigException (..),
+                                              OrgStatConfig (..))
 import           OrgStat.IO                  (readOrgFile)
 import           OrgStat.Scope               (applyModifiers)
 import           OrgStat.WorkMonad           (WorkM, wcConfig, wdReadFiles,
@@ -75,6 +77,8 @@ resolveInputOrg fp = use (wdReadFiles . at fp) >>= \case
         wdReadFiles . at fp .= Just o
         pure o
 
+-- A lot of copy-paste here... 2 bad, though no time to fix
+
 -- | Return scope with requested name or fail. It will be either
 -- constructed on the spot or taken from the state if it had been
 -- created previously.
@@ -126,3 +130,17 @@ resolveReport reportName = use (wdResolvedReports . at reportName) >>= \case
         let finalOrg = cutFromTo fromto $ mergeClocks withModifiers
         wdResolvedReports . at reportName .= Just finalOrg
         pure finalOrg
+
+resolveOutput :: Text -> WorkM ConfOutput
+resolveOutput outputName =
+    views wcConfig (filterOutputs . confOutputs) >>= \case
+        [] ->
+            throwM $ ConfigLogicException $
+            "Report " <> outputName <> " is not declared"
+        [rep] -> pure rep
+        reports ->
+             throwM $ ConfigLogicException $
+            "Multple outputs with name "<> outputName <>
+            " are declared " <> show reports
+  where
+    filterOutputs = filter (\x -> coName x == outputName)

@@ -5,7 +5,7 @@
 module OrgStat.WorkMonad
        ( WorkConfig (..)
        , wcConfig
-       , wcXdgOpen
+       , wcCommonArgs
        , WorkData
        , wdReadFiles
        , wdResolvedScopes
@@ -21,11 +21,13 @@ import           Data.Default   (Default (def))
 import qualified System.Wlog    as W
 
 import           OrgStat.Ast    (Org)
+import           OrgStat.CLI    (CommonArgs)
 import           OrgStat.Config (OrgStatConfig)
 
+-- | Read-only app configuration.
 data WorkConfig = WorkConfig
-    { _wcConfig  :: OrgStatConfig
-    , _wcXdgOpen :: Bool
+    { _wcConfig     :: OrgStatConfig
+    , _wcCommonArgs :: CommonArgs
     }
 
 makeLenses ''WorkConfig
