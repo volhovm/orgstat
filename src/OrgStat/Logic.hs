@@ -54,3 +54,4 @@ runOrgStat = do
     whenM (view wcXdgOpen) $ do
         logInfo "Opening reports using xdg-open..."
         void $ shell ("for i in $(ls "<>T.pack reportDir<>"/*); do xdg-open $i; done") empty
+    logInfo "Done"

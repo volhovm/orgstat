@@ -49,7 +49,7 @@ main :: IO ()
 main = do
     args@Args{..} <- getNodeOptions =<< getHomeDirectory
     let sev = if debug then Debug else Info
-    setupLogging $ consoleOutB & lcTermSeverity .~ Just sev
+    setupLogging Nothing $ consoleOutB & lcTermSeverity .~ Just sev
     config <- readConfig configPath
     runWorkM (WorkConfig config xdgOpen) $ do
         logDebug $ "Just started with options: " <> show args

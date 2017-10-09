@@ -125,5 +125,4 @@ resolveReport reportName = use (wdResolvedReports . at reportName) >>= \case
             applyModifiers orgTop crModifiers
         let finalOrg = cutFromTo fromto $ mergeClocks withModifiers
         wdResolvedReports . at reportName .= Just finalOrg
-        putText $ "generated org: " <> show (filterHasClock finalOrg)
         pure finalOrg
