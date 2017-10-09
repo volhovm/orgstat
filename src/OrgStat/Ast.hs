@@ -12,6 +12,8 @@ module OrgStat.Ast
        , orgSubtrees
 
        , clockDuration
+       , orgTotalDuration
+       , filterHasClock
        , cutFromTo
        , fmapOrgLens
        , traverseTree
@@ -57,6 +59,23 @@ makeLenses ''Org
 clockDuration :: Clock -> NominalDiffTime
 clockDuration (Clock (localTimeToUTC utc -> from) (localTimeToUTC utc -> to)) =
     diffUTCTime to from
+
+-- | Calculate total clocks duration in org tree.
+orgTotalDuration :: Org -> NominalDiffTime
+orgTotalDuration org =
+    sum $ map clockDuration $ concat $ org ^.. traverseTree . orgClocks
+
+-- | Remove subtrees that have zero total duration.
+filterHasClock :: Org -> Org
+filterHasClock = orgSubtrees %~ mapMaybe dfs
+  where
+    dfs :: Org -> Maybe Org
+    dfs o = do
+        let children = mapMaybe dfs (o ^. orgSubtrees)
+        let ownDur = sum $ map clockDuration (o ^. orgClocks)
+        if ownDur == 0 && null children
+            then Nothing
+            else Just $ o & orgSubtrees .~ children
 
 cutFromTo :: (LocalTime, LocalTime) -> Org -> Org
 cutFromTo (from, to) o

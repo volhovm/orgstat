@@ -17,7 +17,8 @@ import           Data.Time                   (LocalTime (..), TimeOfDay (..), ad
 import           Data.Time.Calendar          (addGregorianMonthsRollOver)
 import           Data.Time.Calendar.WeekDate (toWeekDate)
 
-import           OrgStat.Ast                 (Org (..), cutFromTo, mergeClocks, orgTitle)
+import           OrgStat.Ast                 (Org (..), cutFromTo, filterHasClock,
+                                              mergeClocks, orgTitle)
 import           OrgStat.Config              (ConfDate (..), ConfRange (..),
                                               ConfReport (..), ConfScope (..),
                                               ConfigException (..), OrgStatConfig (..))
@@ -125,4 +126,5 @@ resolveReport reportName = use (wdResolvedReports . at reportName) >>= \case
             applyModifiers orgTop crModifiers
         let finalOrg = cutFromTo fromto $ mergeClocks withModifiers
         wdResolvedReports . at reportName .= Just finalOrg
+        putText $ "generated org: " <> show (filterHasClock finalOrg)
         pure finalOrg

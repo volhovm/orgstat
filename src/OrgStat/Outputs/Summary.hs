@@ -9,7 +9,7 @@ import           Universum
 import           Control.Lens                     (views)
 import qualified Data.Attoparsec.ByteString.Char8 as A
 
-import           OrgStat.Ast                      (clockDuration, orgClocks, traverseTree)
+import           OrgStat.Ast                      (orgTotalDuration)
 import           OrgStat.Config                   (confReports, crName)
 import           OrgStat.Helpers                  (resolveReport)
 import           OrgStat.Outputs.Types            (SummaryOutput (..), SummaryParams (..))
@@ -49,9 +49,8 @@ genSummaryOutput SummaryParams{..} = do
         OtherInfo t -> pure t
         ReportTemplate reportName -> do
             report <- resolveReport reportName
-            let allClocks = concat $ report ^.. traverseTree . orgClocks
             let totalTimeMin :: Integer
-                totalTimeMin = round $ (/ 60) $ toRational $ sum $ map clockDuration allClocks
+                totalTimeMin = round $ (/ 60) $ toRational $ orgTotalDuration report
             let hours = totalTimeMin `div` 60
             let minutes = totalTimeMin `mod` 60
             pure $ show hours <> ":" <> show minutes

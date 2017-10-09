@@ -19,8 +19,8 @@ import           Control.Monad.Except (throwError)
 import qualified Data.Text            as T
 import           Universum
 
-import           OrgStat.Ast          (Org, atDepth, orgClocks, orgSubtrees, orgTitle,
-                                       traverseTree)
+import           OrgStat.Ast          (Org, atDepth, orgClocks, orgSubtrees, orgTags,
+                                       orgTitle, traverseTree)
 
 -- | Path in org AST is just a list of paths, head ~ closer to tree
 -- root.
@@ -62,7 +62,7 @@ data ScopeModifier
       -- ^ Turns all subtrees starting with @path@ and then on depth @d@ into leaves.
     | ModFilterTag Text
       -- ^ Given text tag name, it leaves only those subtrees that
-      -- have this tag (tags inherit).
+      -- have this tag (tags are inherited).
     | ModSquash AstPath
       -- ^ Starting at node on path A and depth n, turn A into set of
       -- nodes A/a1/a2/.../an. Doesn't work/make sense for empty path.
@@ -96,6 +96,14 @@ applyModifier m@(ModSelectSubtree path) org = do
     pure $
         fromMaybe (error "applyModifier@ModSelectSubtree is broken") $
         org ^. atPath path
+applyModifier (ModFilterTag tag) o0 = do
+    let matchesTag o = any (== tag) (o ^. orgTags)
+    let dfs :: Org -> Maybe Org
+        dfs o | matchesTag o = Just o
+              | otherwise = case mapMaybe dfs (o ^. orgSubtrees) of
+                                [] -> Nothing
+                                xs -> Just $ o & orgSubtrees .~ xs
+    Right $ o0 & orgSubtrees %~ mapMaybe dfs
 applyModifier _ org = pure org -- TODO
 
 -- | Generates an org to be processed by report generators from 'Scope'.
