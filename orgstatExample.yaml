@@ -19,17 +19,12 @@ timelineDefault:
 reports:
   # Current week, all tasks
   - name: curWeekFull
-    type: 
-      type: timeline
-      range: week # month-1, week-5, day-3 are possible (as in org-mode)
+    range: week # month-1, week-5, day-3 are possible (as in org-mode)
   # Current week, only work/study
   - name: curWeekTop
-    type: 
-      type: timeline
-      range: week
-      # scope: default # 'default' is the default scope, but you 
-      # can chose another one
-      background: 
+    range: week
+    # scope: default # 'default' is the default scope, but you 
+    # can chose another one
     modifiers:
       # Prune modifier goes to node on path and transforms all  
       # noes at depth 'depth' into leaves, collecting their
@@ -41,10 +36,8 @@ reports:
         path: /work/
         depth: 1
   # Only study, previous week
-  - name: curWeekStudy
-    type: 
-      type: timeline
-      range: week-1
+  - name: prevWeekStudy
+    range: week-1
     modifiers: 
       # Select does 'cd' into the chosen node.
       - type: select 
@@ -52,6 +45,28 @@ reports:
       - type: prune
         path: /
         depth: 2
+  - name: prevWeekWork
+    range: week-1
+    modifiers:
+      - type: filterbytag
+        tag: work # that's the tag name
+outputs:
+  # Timeline reports.
+  - name: curWeekFullTimeline
+    type: timeline
+    report: curWeekFull
+  - name: curWeekTopTimeline
+    report: curWeekTop
+    type: timeline
+    background: '#ffaa77'
+  # Nifty stats with a template -- you can put it into your bar!
+  - name: thisWeekStats
+    type: summary
+    template: "work: %prevWeekWork%, study: %prevWeekStudy%"
+  # Just output it somehow. Useful for debugging.
+  - name: someDebugOutput
+    type: block
+    report: curWeekTop
 # Output folder. Subfolder for report will be auto-generated. 
 outputDir: /home/username/reps/orgstat/
 # Must contain all todo keywords you use in files, because
