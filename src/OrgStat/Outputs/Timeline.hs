@@ -2,81 +2,30 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
--- | Timeline reporting. Prouces a svg with columns.
+-- | Timeline reporting output. Prouces a svg with columns.
 
-module OrgStat.Report.Timeline
-       ( TimelineParams (..)
-       , tpColorSalt
-       , tpLegend
-       , tpTopDay
-       , tpColumnWidth
-       , tpColumnHeight
-       , tpBackground
-
-       , processTimeline
+module OrgStat.Outputs.Timeline
+       ( processTimeline
        ) where
 
-import           Control.Lens         (makeLenses)
-import           Data.Colour.CIE      (luminance)
-import           Data.Default         (Default (..))
-import           Data.List            (lookup, nub)
-import qualified Data.Text            as T
-import           Data.Time            (Day, DiffTime, LocalTime (..), defaultTimeLocale,
-                                       formatTime, timeOfDayToTime)
-import           Diagrams.Backend.SVG (B)
-import qualified Diagrams.Prelude     as D
+import           Data.Colour.CIE       (luminance)
+import           Data.List             (lookup, nub)
+import qualified Data.Text             as T
+import           Data.Time             (Day, DiffTime, LocalTime (..), defaultTimeLocale,
+                                        formatTime, timeOfDayToTime)
+import           Diagrams.Backend.SVG  (B)
+import qualified Diagrams.Prelude      as D
 import qualified Prelude
-import           Text.Printf          (printf)
+import           Text.Printf           (printf)
 import           Universum
 
-import           OrgStat.Ast          (Clock (..), Org (..))
-import           OrgStat.Report.Types (SVGImageReport (..))
-import           OrgStat.Util         (addLocalTime, hashColour)
+import           OrgStat.Ast           (Clock (..), Org (..), orgClocks, traverseTree)
+import           OrgStat.Outputs.Types (TimelineOutput (..), TimelineParams, tpBackground,
+                                        tpColorSalt, tpColumnHeight, tpColumnWidth,
+                                        tpLegend, tpTopDay)
+import           OrgStat.Util          (addLocalTime, hashColour)
 
 
-----------------------------------------------------------------------------
--- Parameters
-----------------------------------------------------------------------------
-
-data TimelineParams = TimelineParams
-    { _tpColorSalt    :: !Int
-      -- ^ Salt added when getting color out of task name.
-    , _tpLegend       :: !Bool
-      -- ^ Include map legend?
-    , _tpTopDay       :: !Int
-      -- ^ How many items to include in top day (under column)
-    , _tpColumnWidth  :: !Double
-      -- ^ Column width in percent
-    , _tpColumnHeight :: !Double
-      -- ^ Column height
-    , _tpBackground   :: !(D.Colour Double)
-      -- ^ Color of background
-    } deriving (Show)
-
-instance Default TimelineParams where
-    def = TimelineParams 0 True 5 1 1 (D.sRGB24 0xf2 0xf2 0xf2)
-
-makeLenses ''TimelineParams
-
--- | For all non-default field values of RHS, override LHS with them.
-mergeParams :: TimelineParams -> TimelineParams -> TimelineParams
-mergeParams lhs rhs = mods lhs
-  where
-    mods = foldr1 (.)
-           [ asId tpColorSalt
-           , asId tpLegend
-           , asId tpTopDay
-           , asId tpColumnWidth
-           , asId tpColumnHeight
-           , asId tpBackground ]
-    asId :: forall b. (Eq b) => Lens' TimelineParams b -> TimelineParams -> TimelineParams
-    asId l x =
-        if def ^. l == rhs ^. l
-        then x else x & l .~ (rhs ^. l)
-
-instance Monoid TimelineParams where
-    mempty = def
-    mappend = mergeParams
 
 ----------------------------------------------------------------------------
 -- Processing clocks
@@ -263,11 +212,16 @@ taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd label
       where
         (hours, minutes) = diffTimeMinutes time `divMod` 60
 
-timelineReport :: TimelineParams -> Org -> (LocalTime, LocalTime) -> SVGImageReport
-timelineReport params org (from,to) = SVGImage pic
+timelineReport :: TimelineParams -> Org -> TimelineOutput
+timelineReport params org = TimelineOutput pic
   where
     lookupDef :: Eq a => b -> a -> [(a, b)] -> b
     lookupDef d a xs = fromMaybe d $ lookup a xs
+
+    -- These two should be taken from the Org itself (min/max).
+    (from,to) =
+        let c = concat $ org ^.. traverseTree . orgClocks
+        in (minimum (map cFrom c), maximum (map cTo c))
 
     -- period to show. Right border is -1min, we assume it's non-inclusive
     daysToShow = [localDay from ..
@@ -309,7 +263,5 @@ timelineReport params org (from,to) = SVGImage pic
     pic =
       D.vsep 30 $ [ timelineDays params daysToShow clocks topLists ] ++ optLegend
 
-processTimeline
-    :: (MonadThrow m)
-    => TimelineParams -> Org -> (LocalTime, LocalTime) -> m SVGImageReport
-processTimeline params org fromto = pure $ timelineReport params org fromto
+processTimeline :: TimelineParams -> Org -> TimelineOutput
+processTimeline params org = timelineReport params org

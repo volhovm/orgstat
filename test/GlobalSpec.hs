@@ -20,7 +20,7 @@ import           Unsafe                (unsafeTail)
 import           OrgStat.Ast           (Clock (..), Org (..), atDepth, mergeClocks,
                                         orgClocks)
 import           OrgStat.Config        (ConfDate (..), ConfRange (..))
-import           OrgStat.Logic         (convertRange)
+import           OrgStat.Helpers       (convertRange)
 import           OrgStat.Util          (addLocalTime, parseColour)
 
 

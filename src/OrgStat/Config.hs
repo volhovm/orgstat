@@ -7,28 +7,30 @@
 
 module OrgStat.Config
        ( ConfigException (..)
-       , ConfDate(..)
-       , ConfRange(..)
-       , ConfReportType(..)
+       , ConfDate (..)
+       , ConfRange (..)
+       , ConfOutputType (..)
+       , ConfOutput (..)
        , ConfScope (..)
        , ConfReport (..)
        , OrgStatConfig (..)
        ) where
 
-import           Data.Aeson              (FromJSON (..), Value (Object, String), (.!=),
-                                          (.:), (.:?))
-import           Data.Aeson.Types        (typeMismatch)
-import           Data.Default            (def)
-import           Data.List.NonEmpty      (NonEmpty)
-import qualified Data.Text               as T
-import           Data.Time               (LocalTime)
-import           Data.Time.Format        (defaultTimeLocale, parseTimeM)
+import           Data.Aeson            (FromJSON (..), Value (Object, String), withObject,
+                                        withText, (.!=), (.:), (.:?))
+import           Data.Aeson.Types      (typeMismatch)
+import           Data.Default          (def)
+import           Data.List.NonEmpty    (NonEmpty)
+import qualified Data.Text             as T
+import           Data.Time             (LocalTime)
+import           Data.Time.Format      (defaultTimeLocale, parseTimeM)
 import           Universum
 
-import           OrgStat.Report.Timeline (TimelineParams, tpBackground, tpColumnHeight,
-                                          tpColumnWidth, tpLegend, tpTopDay)
-import           OrgStat.Scope           (AstPath (..), ScopeModifier (..))
-import           OrgStat.Util            (parseColour, (??~))
+import           OrgStat.Outputs.Types (BlockParams (..), SummaryParams (..),
+                                        TimelineParams, tpBackground, tpColumnHeight,
+                                        tpColumnWidth, tpLegend, tpTopDay)
+import           OrgStat.Scope         (AstPath (..), ScopeModifier (..))
+import           OrgStat.Util          (parseColour, (??~))
 
 -- | Exception type for everything bad that happens with config,
 -- starting from parsing to logic errors.
@@ -51,26 +53,35 @@ data ConfRange
     | ConfBlockMonth !Integer
     deriving (Show)
 
-data ConfReportType = Timeline
-    { timelineRange  :: !ConfRange
-    , timelineScope  :: !Text
-    , timelineParams :: !TimelineParams
-    } deriving (Show)
+data ConfOutputType
+    = TimelineOutput { toParams :: !TimelineParams
+                     , toReport :: !Text }
+    | SummaryOutput !SummaryParams
+    | BlockOutput { boParams :: !BlockParams
+                  , boReport :: !Text }
+    deriving (Show)
 
 data ConfScope = ConfScope
     { csName  :: !Text              -- default is "default"
     , csPaths :: !(NonEmpty FilePath)
     } deriving (Show)
 
+data ConfOutput = ConfOutput
+    { coType :: !ConfOutputType
+    , coName :: !Text
+    } deriving (Show)
+
 data ConfReport = ConfReport
-    { crType      :: !ConfReportType -- includes config
-    , crName      :: !Text
+    { crName      :: !Text
+    , crScope     :: !Text
+    , crRange     :: !ConfRange
     , crModifiers :: ![ScopeModifier]
     } deriving (Show)
 
 data OrgStatConfig = OrgStatConfig
     { confScopes             :: ![ConfScope]
     , confReports            :: ![ConfReport]
+    , confOutputs            :: ![ConfOutput]
     , confBaseTimelineParams :: !TimelineParams
     , confTodoKeywords       :: ![Text]
     , confOutputDir          :: !FilePath -- default is "./orgstat"
@@ -78,16 +89,16 @@ data OrgStatConfig = OrgStatConfig
     } deriving (Show)
 
 instance FromJSON AstPath where
-    parseJSON (String s) = pure $ AstPath $ filter (not . T.null) $ T.splitOn "/" s
-    parseJSON invalid    = typeMismatch "AstPath" invalid
+    parseJSON = withText "AstPath" $ \s ->
+        pure $ AstPath $ filter (not . T.null) $ T.splitOn "/" s
 
 instance FromJSON ScopeModifier where
-    parseJSON (Object v) = do
-        v .: "type" >>= \case
-            (String "prune") -> ModPruneSubtree <$> v .: "path" <*> v .:? "depth" .!= 0
-            (String "select") -> ModSelectSubtree <$> v .: "path"
+    parseJSON  = withObject "ScopeModifier" $ \o -> do
+        o .: "type" >>= \case
+            (String "prune") -> ModPruneSubtree <$> o .: "path" <*> o .:? "depth" .!= 0
+            (String "select") -> ModSelectSubtree <$> o .: "path"
+            (String "filterbytag") -> ModFilterTag <$> o .: "tag"
             other -> fail $ "Unsupported scope modifier type: " ++ show other
-    parseJSON invalid    = typeMismatch "ScopeModifier" invalid
 
 instance FromJSON ConfDate where
     parseJSON (String "now") = pure $ ConfNow
@@ -123,7 +134,7 @@ instance FromJSON ConfRange where
     parseJSON invalid          = typeMismatch "ConfRange" invalid
 
 instance FromJSON TimelineParams where
-    parseJSON (Object v) = do
+    parseJSON = withObject "TimelineParams" $ \v -> do
         legend <- v .:? "legend"
         topDay <- v .:? "topDay"
         colWidth <- v .:? "colWidth"
@@ -134,36 +145,47 @@ instance FromJSON TimelineParams where
                    & tpColumnWidth ??~ colWidth
                    & tpColumnHeight ??~ colHeight
                    & tpBackground ??~ (T.strip <$> bgColorRaw >>= parseColour @Text)
-    parseJSON invalid    = typeMismatch "TimelineParams" invalid
 
-instance FromJSON ConfReportType where
-    parseJSON o@(Object v) = do
-        v .: "type" >>= \case
-            (String "timeline") ->
-                Timeline <$> v .: "range"
-                         <*> v .:? "scope" .!= "default"
-                         <*> parseJSON o
-            other -> fail $ "Unsupported scope modifier type: " ++ show other
-    parseJSON invalid    = typeMismatch "ConfReportType" invalid
+instance FromJSON ConfOutputType where
+    parseJSON = withObject "ConfOutputType" $ \o ->
+        o .: "type" >>= \case
+            (String "timeline") -> do
+                toReport <- o .: "report"
+                toParams <- parseJSON (Object o)
+                pure $ TimelineOutput {..}
+            (String "summary") -> do
+                soTemplate <- o .: "template"
+                pure $ SummaryOutput $ SummaryParams soTemplate
+            (String "block") -> do
+                boReport <- o .: "report"
+                let boParams = BlockParams
+                pure $ BlockOutput {..}
+            other -> fail $ "Unsupported output type: " ++ show other
+
+instance FromJSON ConfOutput where
+    parseJSON = withObject "ConfOutput" $ \o -> do
+        coName   <- o .: "name"
+        coType  <- parseJSON (Object o)
+        pure $ ConfOutput{..}
 
 instance FromJSON ConfScope where
-    parseJSON (Object v) = do
-        ConfScope <$> v .:? "name" .!= "default" <*> v .: "paths"
-    parseJSON invalid    = typeMismatch "ConfScope" invalid
+    parseJSON = withObject "ConfScope" $ \o ->
+        ConfScope <$> o .:? "name" .!= "default"
+                  <*> o .: "paths"
 
 instance FromJSON ConfReport where
-    parseJSON (Object v) = do
-        ConfReport <$> v .: "type"
-                   <*> v .:? "name" .!= "default"
-                   <*> v .:? "modifiers" .!= []
-    parseJSON invalid    = typeMismatch "ConfReport" invalid
+    parseJSON = withObject "ConfReport" $ \o ->
+        ConfReport <$> o .: "name"
+                   <*> o .:? "scope" .!= "default"
+                   <*> o .: "range"
+                   <*> o .:? "modifiers" .!= []
 
 instance FromJSON OrgStatConfig where
-    parseJSON (Object v) = do
-        OrgStatConfig <$> v .: "scopes"
-                      <*> v .: "reports"
-                      <*> v .:? "timelineDefault" .!= def
-                      <*> v .:? "todoKeywords" .!= []
-                      <*> v .:? "output" .!= "./orgstat"
-                      <*> v .:? "colorSalt" .!= 0
-    parseJSON invalid    = typeMismatch "ConfReport" invalid
+    parseJSON = withObject "OrgStatConfig" $ \o ->
+        OrgStatConfig <$> o .: "scopes"
+                      <*> o .: "reports"
+                      <*> o .: "outputs"
+                      <*> o .:? "timelineDefault" .!= def
+                      <*> o .:? "todoKeywords" .!= []
+                      <*> (o .:? "outputDir" <|> o .:? "output") .!= "./orgstat"
+                      <*> o .:? "colorSalt" .!= 0

@@ -9,6 +9,7 @@ module OrgStat.Util
        , parseColour
        , hashColour
        , (??~)
+       , timeF
        ) where
 
 import           Control.Lens     (ASetter, ix)
@@ -21,8 +22,8 @@ import           Data.Colour.SRGB (RGB (..), sRGB24, toSRGBBounded)
 import           Data.Hashable    (hashWithSalt)
 import           Data.List        (nub)
 import           Data.List        ((!!))
-import           Data.Time        (LocalTime (..), addUTCTime, localTimeToUTC, utc,
-                                   utcToLocalTime)
+import           Data.Time        (LocalTime (..), NominalDiffTime, addUTCTime,
+                                   localTimeToUTC, utc, utcToLocalTime)
 import           Universum
 
 -- | JSON/Yaml TH modifier. Each field of type "aoeuKek" turns into
@@ -82,3 +83,13 @@ hashColour salt item = colours !! (hashWithSalt salt item `mod` length colours)
 (??~) :: ASetter s s a b -> Maybe b -> s -> s
 (??~) _ Nothing  = identity
 (??~) l (Just k) = l .~ k
+
+-- | Time formatter in form HH:MM
+timeF :: NominalDiffTime -> Text
+timeF n = do
+    let totalTimeMin :: Integer
+        totalTimeMin = round $ (/ 60) $ toRational n
+    let hours = totalTimeMin `div` 60
+    let minutes = totalTimeMin `mod` 60
+    let showTwo x = (if x < 10 then "0" else "") <> show x
+    fromString $ show hours <> ":" <> showTwo minutes
