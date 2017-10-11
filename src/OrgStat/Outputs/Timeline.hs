@@ -102,24 +102,25 @@ fitLabelWidth params n s =
   where
     toTake = floor $ n * ((params ^. tpColumnWidth) ** 1.2)
 
+-- rectangle with origin in the top-left corner
+topLeftRect :: Double -> Double -> D.Diagram B
+topLeftRect w h =
+  D.rect w h
+  & D.moveOriginTo (D.p2 (-w/2, h/2))
+
 -- timeline for a single day
 timelineDay :: TimelineParams -> Day -> [(Text, (DiffTime, DiffTime))] -> D.Diagram B
 timelineDay params day clocks =
-    (D.strutY 5 D.===) $
-    (dateLabel D.===) $
-    D.scaleUToY height $
-    (timeticks D.|||) $
     mconcat
-      [ mconcat (map showClock clocks)
-      , background
+      [ timeticks
+      , dateLabel
+      , mconcat (map showClock clocks)
+      , clocksBackground
       ]
   where
-    width = 140 * (totalHeight / height) * (params ^. tpColumnWidth)
-    ticksWidth = 20 * (totalHeight / height)
+    width = 140 * (params ^. tpColumnWidth)
+    ticksWidth = 20
     height = 700 * (params ^. tpColumnHeight)
-
-    totalHeight :: Double
-    totalHeight = 24*60
 
     timeticks :: D.Diagram B
     timeticks =
@@ -129,30 +130,31 @@ timelineDay params day clocks =
         [ D.alignedText 0.5 1 (show hour)
           & D.font "DejaVu Sans"
           & D.fontSize 8
-          & D.moveTo (D.p2 (0, -5))
-        , D.rect ticksWidth 1
-          & D.lw D.none
+          & D.moveTo (D.p2 (ticksWidth/2, -5))
+          & D.fc (D.sRGB24 150 150 150)
+        , D.strokeT (D.p2 (0,0) D.~~ (D.p2 (ticksWidth, 0)))
+          & D.translateY (-0.5)
+          & D.lwO 1
+          & D.lc (D.sRGB24 200 200 200)
         ]
-      & D.fc (D.sRGB24 150 150 150)
-      & D.moveTo (D.p2 (0, totalHeight - fromIntegral hour * 60))
+      & D.moveTo (D.p2 (0, negate $ fromInteger . round $ height * (fromIntegral hour / 24)))
+      & D.moveOriginTo (D.p2 (ticksWidth, 0))
 
     dateLabel :: D.Diagram B
     dateLabel =
       mconcat
       [ D.strutY 20
-      , D.alignedText 0 0.65 (formatTime defaultTimeLocale "%a, %d.%m.%Y" day)
+      , D.alignedText 0 0 (formatTime defaultTimeLocale "%a, %d.%m.%Y" day)
         & D.font "DejaVu Sans"
         & D.fontSize 12
-        & D.moveTo (D.p2 (25, 0))
+        & D.moveTo (D.p2 (15, 0))
       ]
 
-    background :: D.Diagram B
-    background =
-      D.rect width totalHeight
+    clocksBackground :: D.Diagram B
+    clocksBackground =
+      topLeftRect width height
       & D.lw D.none
       & D.fc (params ^. tpBackground)
-      & D.moveOriginTo (D.p2 (-width/2, totalHeight/2))
-      & D.moveTo (D.p2 (0, totalHeight))
 
     contrastFrom c = if luminance c < 0.14 then D.sRGB24 224 224 224 else D.black
 
@@ -160,19 +162,21 @@ timelineDay params day clocks =
     showClock (label, (start, end)) =
       let
         w = width
-        h = fromInteger $ diffTimeMinutes $ end - start
+        h = (* height) $ fromInteger (diffTimeMinutes $ end - start) / (24*60)
+        y = (* height) $ fromInteger (diffTimeMinutes start) / (24*60)
+
         bgboxColour = labelColour params label
-        bgbox = D.rect w h
-                & D.lw D.none
-                & D.fc bgboxColour
+        bgbox = topLeftRect w h
+              & D.lw D.none
+              & D.fc bgboxColour
         label' = D.alignedText 0 0.5 (T.unpack $ fitLabelWidth params 21 label)
                & D.font "DejaVu Sans"
                & D.fontSize 10
                & D.fc (contrastFrom bgboxColour)
-               & D.moveTo (D.p2 (-w/2+10, 0))
+               & D.moveTo (D.p2 (5, -h/2))
         box = mconcat $ bool [] [label'] (fitLabelHeight params 14 h) ++ [bgbox]
-      in box & D.moveOriginTo (D.p2 (-w/2, h/2))
-             & D.moveTo (D.p2 (0, totalHeight - fromInteger (diffTimeMinutes start)))
+      in box & D.moveTo (D.p2 (0, -y))
+
 -- timelines for several days, with top lists
 timelineDays
   :: TimelineParams
@@ -181,6 +185,7 @@ timelineDays
   -> [[(Text, DiffTime)]]
   -> D.Diagram B
 timelineDays params days clocks topLists =
+    (D.strutY 10 D.===) $
     D.hcat $
     flip map (days `zip` (clocks `zip` topLists)) $ \(day, (dayClocks, topList)) ->
       D.vsep 5
@@ -198,7 +203,7 @@ taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd label
       [ D.alignedText 1 0.5 (showTime time)
         & D.font "DejaVu Sans"
         & D.fontSize 10
-        & D.translateX 30
+        & D.translateX 20
       , D.rect 12 12
         & D.fc (labelColour params label)
         & D.lw D.none
