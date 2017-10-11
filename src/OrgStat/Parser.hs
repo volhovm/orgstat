@@ -51,11 +51,19 @@ parseOrg todoKeywords = convertDocument <$> O.parseDocument todoKeywords
         , _orgSubtrees = map convertHeading $ O.subHeadlines headline
         }
 
+    mapEither :: (a -> Either e b) -> ([a] -> [b])
+    mapEither f xs = rights $ map f xs
+
     getClocks :: O.Section -> [Clock]
     getClocks section =
-        mapMaybe convertClock $
-            O.sectionClocks section <>
-            O.unLogbook (O.sectionLogbook section)
+        mapMaybe convertClock $ concat
+          [ O.sectionClocks section
+          , O.unLogbook (O.sectionLogbook section)
+          , mapEither (A.parseOnly O.parseClock) $ concat
+            [ concatMap lines $ map O.contents $ O.sectionDrawers section
+            , lines $ O.sectionParagraph section
+            ]
+          ]
 
     -- convert clocks from orgmode-parse format, returns Nothing for clocks
     -- without end time or time-of-day
