@@ -13,7 +13,7 @@ scopes:
 timelineDefault:
   colWidth: 1.2         # width of single timeline column
   colHeight: 1.1        # height of single timeline column
-  topDay: 8             # number of days in per-day longest-top list
+  topDay: 8             # number of items in per-day longest-top list
   legend: true          # should legend be shown (true by default)
   background: '#ff00aa' # background color, grey by default
 reports:
