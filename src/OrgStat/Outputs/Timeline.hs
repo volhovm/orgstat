@@ -144,10 +144,10 @@ timelineDay params day clocks =
     dateLabel =
       mconcat
       [ D.strutY 20
-      , D.alignedText 0 0 (formatTime defaultTimeLocale "%a, %d.%m.%Y" day)
+      , D.alignedText 0.5 0 (formatTime defaultTimeLocale "%a, %d.%m.%Y" day)
         & D.font "DejaVu Sans"
         & D.fontSize 12
-        & D.moveTo (D.p2 (15, 0))
+        & D.moveOriginTo (D.p2 (-width/2, 0))
       ]
 
     clocksBackground :: D.Diagram B
