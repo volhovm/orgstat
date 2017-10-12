@@ -9,7 +9,7 @@ import           Universum
 import           Control.Lens                     (views)
 import qualified Data.Attoparsec.ByteString.Char8 as A
 
-import           OrgStat.Ast                      (orgTotalDuration)
+import           OrgStat.Ast                      (filterHasClock, orgTotalDuration)
 import           OrgStat.Config                   (confReports, crName)
 import           OrgStat.Helpers                  (resolveReport)
 import           OrgStat.Outputs.Types            (SummaryOutput (..), SummaryParams (..))
@@ -49,6 +49,6 @@ genSummaryOutput SummaryParams{..} = do
     res <- fmap mconcat $ forM tokens $ \case
         OtherInfo t -> pure t
         ReportTemplate reportName -> do
-            report <- resolveReport reportName
+            report <- filterHasClock <$> resolveReport reportName
             pure $ timeF $ orgTotalDuration report
     pure $ SummaryOutput res
