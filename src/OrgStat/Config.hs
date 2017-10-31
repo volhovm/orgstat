@@ -158,7 +158,7 @@ instance FromJSON ConfOutputType where
                 pure $ SummaryOutput $ SummaryParams soTemplate
             (String "block") -> do
                 boReport <- o .: "report"
-                let boParams = BlockParams
+                let boParams = def
                 pure $ BlockOutput {..}
             other -> fail $ "Unsupported output type: " ++ show other
 

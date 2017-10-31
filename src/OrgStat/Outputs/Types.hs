@@ -93,8 +93,13 @@ newtype SummaryOutput = SummaryOutput Text
 
 -- | Parameters for block output. Stub (for now).
 data BlockParams = BlockParams
-    {
+    { bpMaxLength :: Int
+      -- ^ Maximum title length (together with indentation).
+    , bpUnicode   :: Bool
     } deriving (Show)
+
+instance Default BlockParams where
+    def = BlockParams 80 True
 
 -- | Output of block type is text file, basically.
 newtype BlockOutput = BlockOutput Text

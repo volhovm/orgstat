@@ -29,6 +29,7 @@ library
   build-depends:       aeson >= 0.11.2.0
                      , attoparsec
                      , base >=4.9 && <4.10
+                     , boxes >= 0.1.4
                      , bytestring
                      , colour >= 2.3.3
                      , containers >= 0.5.7.1
