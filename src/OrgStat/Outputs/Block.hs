@@ -33,18 +33,18 @@ genBlockOutput BlockParams{..} (filterHasClock -> o0) = do
     BlockOutput $ fromString $ render $
         hsep 2 center1 [vsep,col1,vsep,col2,vsep]
   where
-    BlockFrames{..} = if bpUnicode then unicodeBlockFrames else asciiBlockFrames
+    BlockFrames{..} = if _bpUnicode then unicodeBlockFrames else asciiBlockFrames
     text' = text . toString
     elems = withDepth (0::Int) o0
     col1 = vcat left $ map (text' . trimTitle . fst) elems
     col2 = vcat right $ map (text' . snd) elems
     vsep = vcat center1 $ replicate (length elems) (text $ toString bfVertical)
 
-    trimTitle t | T.length t > bpMaxLength = T.take (bpMaxLength - 3) t <> "..."
+    trimTitle t | T.length t > _bpMaxLength = T.take (_bpMaxLength - 3) t <> "..."
                 | otherwise = t
     formatter o =
         let dur = orgTotalDuration o
-            titleRaw = T.take bpMaxLength $ o ^. orgTitle
+            titleRaw = T.take _bpMaxLength $ o ^. orgTitle
         in (titleRaw, timeF dur)
 
     withDepth :: Int -> Org -> [(Text,Text)]

@@ -26,9 +26,9 @@ import           Data.Time             (LocalTime)
 import           Data.Time.Format      (defaultTimeLocale, parseTimeM)
 import           Universum
 
-import           OrgStat.Outputs.Types (BlockParams (..), SummaryParams (..),
-                                        TimelineParams, tpBackground, tpColumnHeight,
-                                        tpColumnWidth, tpLegend, tpTopDay)
+import           OrgStat.Outputs.Types (BlockParams, SummaryParams (..), TimelineParams,
+                                        bpMaxLength, bpUnicode, tpBackground,
+                                        tpColumnHeight, tpColumnWidth, tpLegend, tpTopDay)
 import           OrgStat.Scope         (AstPath (..), ScopeModifier (..))
 import           OrgStat.Util          (parseColour, (??~))
 
@@ -158,7 +158,10 @@ instance FromJSON ConfOutputType where
                 pure $ SummaryOutput $ SummaryParams soTemplate
             (String "block") -> do
                 boReport <- o .: "report"
-                let boParams = def
+                maxLength <- o .: "maxLength"
+                unicode <- o .: "unicode"
+                let boParams = def & bpMaxLength ??~ maxLength
+                                   & bpUnicode ??~ unicode
                 pure $ BlockOutput {..}
             other -> fail $ "Unsupported output type: " ++ show other
 
