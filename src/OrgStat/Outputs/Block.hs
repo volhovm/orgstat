@@ -6,29 +6,64 @@ module OrgStat.Outputs.Block
        ) where
 
 import           Universum
+import           Unsafe                 (unsafeLast)
 
-import qualified Data.Text             as T
+import qualified Data.Text              as T
+import           Text.PrettyPrint.Boxes (center1, hsep, left, render, right, text, vcat)
 
-import           OrgStat.Ast           (Org, filterHasClock, orgTitle, orgTotalDuration,
-                                        traverseTree)
-import           OrgStat.Outputs.Types (BlockOutput (..), BlockParams)
-import           OrgStat.Util          (timeF)
+import           OrgStat.Ast            (Org, filterHasClock, orgSubtrees, orgTitle,
+                                         orgTotalDuration)
+import           OrgStat.Outputs.Types  (BlockOutput (..), BlockParams (..))
+import           OrgStat.Util           (dropEnd, timeF)
 
--- Stub. Used for debug mostly.
+data BlockFrames = BlockFrames
+    { bfAngle1     :: Text
+    , bfAngle2     :: Text
+    , bfHorizontal :: Text
+    , bfVertical   :: Text
+    } deriving Show
+
+unicodeBlockFrames,asciiBlockFrames :: BlockFrames
+unicodeBlockFrames = BlockFrames "├" "└" "─" "│"
+asciiBlockFrames = BlockFrames "|" "\\" "-" "|"
+
+-- | Generate block output (emacs table-like).
 genBlockOutput :: BlockParams -> Org -> BlockOutput
-genBlockOutput _ (filterHasClock -> o0) = do
-    BlockOutput $ T.unlines $ map formatter (o0 ^.. traverseTree)
+genBlockOutput BlockParams{..} (filterHasClock -> o0) = do
+    BlockOutput $ fromString $ render $
+        hsep 2 center1 [vsep,col1,vsep,col2,vsep]
   where
-    -- todo implement it with boxes package instead, this is just as stub
-    cutLen = 50
-    margin = 2
-    genPad n = fromString (replicate n ' ')
+    BlockFrames{..} = if _bpUnicode then unicodeBlockFrames else asciiBlockFrames
+    text' = text . toString
+    elems = withDepth (0::Int) o0
+    col1 = vcat left $ map (text' . trimTitle . fst) elems
+    col2 = vcat right $ map (text' . snd) elems
+    vsep = vcat center1 $ replicate (length elems) (text $ toString bfVertical)
+
+    trimTitle t | T.length t > _bpMaxLength = T.take (_bpMaxLength - 3) t <> "..."
+                | otherwise = t
     formatter o =
         let dur = orgTotalDuration o
-            titleRaw = T.take cutLen $ o ^. orgTitle
-            padding = cutLen - length titleRaw
-            titlePadded = titleRaw <> genPad padding
-        in mconcat [ titlePadded
-                   , genPad margin <> " | " <> genPad margin
-                   , timeF dur
-                   ]
+            titleRaw = T.take _bpMaxLength $ o ^. orgTitle
+        in (titleRaw, timeF dur)
+
+    withDepth :: Int -> Org -> [(Text,Text)]
+    withDepth i o = do
+        let (name,dur) = formatter o
+        let children = map (withDepth (i+1)) (o ^. orgSubtrees)
+        let processChild,processLastChild :: [(Text,Text)] -> [(Text,Text)]
+            processChild [] = []
+            processChild (pair0:pairs) =
+                first ((bfAngle1 <> bfHorizontal <> " ") <>) pair0 :
+                map (first ((bfVertical <> "  ") <>)) pairs
+            processLastChild [] = []
+            processLastChild (pair0:pairs) =
+                first ((bfAngle2 <> bfHorizontal <> " ") <>) pair0 :
+                map (first ("   " <>)) pairs
+        let childrenProcessed
+                | null children = []
+                | otherwise =
+                      concat $
+                      map processChild (dropEnd 1 children) ++
+                      [processLastChild (unsafeLast children)]
+        (name,dur) : childrenProcessed

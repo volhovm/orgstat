@@ -16,6 +16,8 @@ module OrgStat.Outputs.Types
        , SummaryOutput (..)
 
        , BlockParams (..)
+       , bpMaxLength
+       , bpUnicode
        , BlockOutput (..)
        ) where
 
@@ -93,8 +95,15 @@ newtype SummaryOutput = SummaryOutput Text
 
 -- | Parameters for block output. Stub (for now).
 data BlockParams = BlockParams
-    {
+    { _bpMaxLength :: Int
+      -- ^ Maximum title length (together with indentation).
+    , _bpUnicode   :: Bool
     } deriving (Show)
+
+makeLenses ''BlockParams
+
+instance Default BlockParams where
+    def = BlockParams 80 True
 
 -- | Output of block type is text file, basically.
 newtype BlockOutput = BlockOutput Text

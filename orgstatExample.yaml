@@ -66,6 +66,8 @@ outputs:
   # Just output it somehow. Useful for debugging.
   - name: someDebugOutput
     type: block
+    unicode: true
+    maxLength: 60
     report: curWeekTop
 # Output folder. Subfolder for report will be auto-generated. 
 outputDir: /home/username/reps/orgstat/

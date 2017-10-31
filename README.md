@@ -7,7 +7,7 @@ Orgstat is a statistics visualizer tool for org-mode. Given a set of org-mode fi
 it parses AST, applies modifications such as tag filtering, pruning or selecting a subtree (which yields a _report_) and generates _output_ using specified params. Currently supported output types are:
 * Timeline output: that's a svg image describing what took your time on every day of selected report range. 
 * Summary output: you specify the template string with `%reportName%` in it and it replaces each such occurrence with total hours spent on report. Useful for putting this info into your status bar.
-* Block output: that's what you'd expect from default org report generator (though it's currently in the very raw state and used for debugging mostly).
+* Block output: that's what you'd expect from default org report generator, though formatting is more similar to one that `tree` unix utility provides.
 
 ## Building/installing
 
@@ -54,4 +54,4 @@ Then you run `stack exec orgstat -- --select-output resolveOutput --output-dir ~
 
 ## Bugs and issues
 
-If you experience any problems with the application, you may use `block` output and `--debug` to debug yourself or create the issue. 
+If you experience any problems with the application, you can use `block` output and `--debug` to debug yourself (or you can just create an issue).

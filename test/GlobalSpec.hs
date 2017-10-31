@@ -8,7 +8,7 @@ import qualified Data.Text             as T
 import           Data.Text.Arbitrary   ()
 import           Data.Time             (LocalTime (..), TimeOfDay (..), getZonedTime,
                                         zonedTimeToLocalTime)
-import           Data.Time.Calendar    (addGregorianMonthsRollOver, fromGregorian)
+import           Data.Time.Calendar    (addGregorianMonthsClip, fromGregorian)
 import           Test.Hspec            (Spec, describe, runIO)
 import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck       (Arbitrary (arbitrary), Gen, NonNegative (..),
@@ -106,7 +106,7 @@ convertRangeSpec = describe "Logic#convertRange" $ do
     curTime <- runIO $ zonedTimeToLocalTime <$> getZonedTime
     let subDays a i = (negate i * 60 * 60 * 24) `addLocalTime` a
     let subWeeks a i = (negate i * 60 * 60 * 24 * 7) `addLocalTime` a
-    let subMonths a i = a { localDay = (negate i) `addGregorianMonthsRollOver` (localDay a) }
+    let subMonths a i = a { localDay = (negate i) `addGregorianMonthsClip` (localDay a) }
     let inRange c (a,b) = c >= a && c <= b
     let convert = liftIO . convertRange
     prop "(now-1h, now) is correctly parsed" $

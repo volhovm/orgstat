@@ -1,8 +1,9 @@
 name:                orgstat
-version:             0.1.1
+version:             0.1.2
 synopsis:            Statistics visualizer for org-mode
 license:             GPL-3
 license-file:        LICENSE
+extra-source-files:  CHANGES.md
 homepage:            https://github.com/volhovM/orgstat
 author:              Mikhail Volkhov <volhovm.cs@gmail.com>, Zhenya Vinogradov <zhenyavinogradov@gmail.com>
 maintainer:          volhovm.cs@gmail.com
@@ -29,6 +30,7 @@ library
   build-depends:       aeson >= 0.11.2.0
                      , attoparsec
                      , base >=4.9 && <4.10
+                     , boxes >= 0.1.4
                      , bytestring
                      , colour >= 2.3.3
                      , containers >= 0.5.7.1
