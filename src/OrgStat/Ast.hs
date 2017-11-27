@@ -21,11 +21,10 @@ module OrgStat.Ast
        , mergeClocks
        ) where
 
-import           Control.Lens (ASetter', makeLenses)
-import           Data.Time    (LocalTime, NominalDiffTime, diffUTCTime, localTimeToUTC,
-                               localTimeToUTC, utc)
+import Control.Lens (ASetter', makeLenses)
+import Data.Time (LocalTime, NominalDiffTime, diffUTCTime, localTimeToUTC, localTimeToUTC, utc)
 
-import           Universum
+import Universum
 
 ----------------------------------------------------------------------------
 -- Types

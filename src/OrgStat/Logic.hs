@@ -6,23 +6,21 @@ module OrgStat.Logic
        ( runOrgStat
        ) where
 
-import           Universum
+import Universum
 
-import           Control.Lens      (views)
-import qualified Data.Text         as T
-import           Data.Time         (defaultTimeLocale, formatTime, getZonedTime)
-import           System.Directory  (createDirectoryIfMissing)
-import           System.FilePath   ((</>))
-import           System.Wlog       (logDebug, logInfo)
-import           Turtle            (shell)
+import Control.Lens (views)
+import qualified Data.Text as T
+import Data.Time (defaultTimeLocale, formatTime, getZonedTime)
+import System.Directory (createDirectoryIfMissing)
+import System.FilePath ((</>))
+import System.Wlog (logDebug, logInfo)
+import Turtle (shell)
 
-import           OrgStat.CLI       (CommonArgs (..))
-import           OrgStat.Config    (ConfOutput (..), ConfOutputType (..),
-                                    OrgStatConfig (..))
-import           OrgStat.Helpers   (resolveOutput, resolveReport)
-import           OrgStat.Outputs   (genBlockOutput, genSummaryOutput, processTimeline,
-                                    tpColorSalt, writeReport)
-import           OrgStat.WorkMonad (WorkM, wcCommonArgs, wcConfig)
+import OrgStat.CLI (CommonArgs (..))
+import OrgStat.Config (ConfOutput (..), ConfOutputType (..), OrgStatConfig (..))
+import OrgStat.Helpers (resolveOutput, resolveReport)
+import OrgStat.Outputs (genBlockOutput, genSummaryOutput, processTimeline, tpColorSalt, writeReport)
+import OrgStat.WorkMonad (WorkM, wcCommonArgs, wcConfig)
 
 -- | Main application logic.
 runOrgStat :: WorkM ()

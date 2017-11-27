@@ -12,19 +12,18 @@ module OrgStat.Util
        , timeF
        ) where
 
-import           Control.Lens     (ASetter, ix)
-import           Data.Aeson.TH    (defaultOptions)
-import           Data.Aeson.Types (Options, fieldLabelModifier)
-import           Data.Char        (isLower, toLower)
-import           Data.Colour      (Colour)
-import           Data.Colour.CIE  (luminance)
-import           Data.Colour.SRGB (RGB (..), sRGB24, toSRGBBounded)
-import           Data.Hashable    (hashWithSalt)
-import           Data.List        (nub)
-import           Data.List        ((!!))
-import           Data.Time        (LocalTime (..), NominalDiffTime, addUTCTime,
-                                   localTimeToUTC, utc, utcToLocalTime)
-import           Universum
+import Control.Lens (ASetter, ix)
+import Data.Aeson.TH (defaultOptions)
+import Data.Aeson.Types (Options, fieldLabelModifier)
+import Data.Char (isLower, toLower)
+import Data.Colour (Colour)
+import Data.Colour.CIE (luminance)
+import Data.Colour.SRGB (RGB (..), sRGB24, toSRGBBounded)
+import Data.Hashable (hashWithSalt)
+import Data.List (nub)
+import Data.List ((!!))
+import Data.Time (LocalTime (..), NominalDiffTime, addUTCTime, localTimeToUTC, utc, utcToLocalTime)
+import Universum
 
 -- | JSON/Yaml TH modifier. Each field of type "aoeuKek" turns into
 -- "kek". Placed here because it can't be defined near json TH

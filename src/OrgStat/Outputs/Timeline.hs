@@ -8,22 +8,20 @@ module OrgStat.Outputs.Timeline
        ( processTimeline
        ) where
 
-import           Data.Colour.CIE       (luminance)
-import           Data.List             (lookup, nub)
-import qualified Data.Text             as T
-import           Data.Time             (Day, DiffTime, LocalTime (..), defaultTimeLocale,
-                                        formatTime, timeOfDayToTime)
-import           Diagrams.Backend.SVG  (B)
-import qualified Diagrams.Prelude      as D
+import Data.Colour.CIE (luminance)
+import Data.List (lookup, nub)
+import qualified Data.Text as T
+import Data.Time (Day, DiffTime, LocalTime (..), defaultTimeLocale, formatTime, timeOfDayToTime)
+import Diagrams.Backend.SVG (B)
+import qualified Diagrams.Prelude as D
 import qualified Prelude
-import           Text.Printf           (printf)
-import           Universum
+import Text.Printf (printf)
+import Universum
 
-import           OrgStat.Ast           (Clock (..), Org (..), orgClocks, traverseTree)
-import           OrgStat.Outputs.Types (TimelineOutput (..), TimelineParams, tpBackground,
-                                        tpColorSalt, tpColumnHeight, tpColumnWidth,
-                                        tpLegend, tpTopDay)
-import           OrgStat.Util          (addLocalTime, hashColour)
+import OrgStat.Ast (Clock (..), Org (..), orgClocks, traverseTree)
+import OrgStat.Outputs.Types (TimelineOutput (..), TimelineParams, tpBackground, tpColorSalt,
+                              tpColumnHeight, tpColumnWidth, tpLegend, tpTopDay)
+import OrgStat.Util (addLocalTime, hashColour)
 
 
 

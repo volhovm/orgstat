@@ -5,10 +5,9 @@ module OrgStat.CLI
        , parseCommonArgs
        ) where
 
-import           Universum
+import Universum
 
-import           Options.Applicative.Simple (Parser, help, long, metavar, strOption,
-                                             switch)
+import Options.Applicative.Simple (Parser, help, long, metavar, strOption, switch)
 
 -- | Read-only arguments that inner application needs (in contrast to,
 -- say, logging severity).
