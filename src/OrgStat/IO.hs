@@ -7,21 +7,21 @@ module OrgStat.IO
        , readConfig
        ) where
 
-import qualified Base             as Base
-import qualified Data.ByteString  as BS
-import qualified Data.Text        as T
-import qualified Data.Text.IO     as TIO
-import           Data.Yaml        (decodeEither)
-import           System.Directory (doesFileExist)
-import           System.FilePath  (takeBaseName, takeExtension)
-import           System.Wlog      (WithLogger, logDebug)
-import           Turtle           (ExitCode (..), procStrict)
-import           Universum
+import qualified Base as Base
+import qualified Data.ByteString as BS
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+import Data.Yaml (decodeEither)
+import System.Directory (doesFileExist)
+import System.FilePath (takeBaseName, takeExtension)
+import System.Wlog (WithLogger, logDebug)
+import Turtle (ExitCode (..), procStrict)
+import Universum
 
-import           OrgStat.Ast      (Org)
-import           OrgStat.Config   (ConfigException (ConfigParseException), OrgStatConfig)
-import           OrgStat.Parser   (runParser)
-import           OrgStat.Util     (dropEnd)
+import OrgStat.Ast (Org)
+import OrgStat.Config (ConfigException (ConfigParseException), OrgStatConfig)
+import OrgStat.Parser (runParser)
+import OrgStat.Util (dropEnd)
 
 data OrgIOException
     = OrgIOException Text

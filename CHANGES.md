@@ -1,3 +1,9 @@
+0.1.3
+=====
+
+* Updated universum to 1.7.1, universum to 0.8.0. Switched to nightly/ghc-8.2.1.
+
+
 0.1.2
 =====
 

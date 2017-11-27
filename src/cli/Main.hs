@@ -3,20 +3,19 @@
 
 module Main where
 
-import           Data.Version               (showVersion)
-import           Options.Applicative.Simple (Parser, help, long, metavar, simpleOptions,
-                                             strOption, switch, value)
-import           Paths_orgstat              (version)
-import           System.Directory           (getHomeDirectory)
-import           System.FilePath            ((</>))
-import           System.Wlog                (Severity (..), consoleOutB, lcTermSeverity,
-                                             logDebug, logError, setupLogging)
-import           Universum
+import Data.Version (showVersion)
+import Options.Applicative.Simple (Parser, help, long, metavar, simpleOptions, strOption, switch,
+                                   value)
+import Paths_orgstat (version)
+import System.Directory (getHomeDirectory)
+import System.FilePath ((</>))
+import System.Wlog (Severity (..), logDebug, logError, setupLogging, termSeveritiesOutB)
+import Universum
 
-import           OrgStat.CLI                (CommonArgs, parseCommonArgs)
-import           OrgStat.IO                 (readConfig)
-import           OrgStat.Logic              (runOrgStat)
-import           OrgStat.WorkMonad          (WorkConfig (..), runWorkM)
+import OrgStat.CLI (CommonArgs, parseCommonArgs)
+import OrgStat.IO (readConfig)
+import OrgStat.Logic (runOrgStat)
+import OrgStat.WorkMonad (WorkConfig (..), runWorkM)
 
 data Args = Args
     { configPath :: !FilePath
@@ -52,7 +51,7 @@ main :: IO ()
 main = do
     args@Args{..} <- getNodeOptions =<< getHomeDirectory
     let sev = if debug then Debug else Info
-    setupLogging Nothing $ consoleOutB & lcTermSeverity .~ Just sev
+    setupLogging Nothing $ termSeveritiesOutB (one sev)
     config <- readConfig configPath
     runWorkM (WorkConfig config commonArgs) $ do
         logDebug $ "Just started with options: " <> show args

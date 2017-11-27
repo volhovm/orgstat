@@ -14,15 +14,15 @@ module OrgStat.WorkMonad
        , runWorkM
        ) where
 
-import           Universum
+import Universum
 
-import           Control.Lens   (makeLenses)
-import           Data.Default   (Default (def))
-import qualified System.Wlog    as W
+import Control.Lens (makeLenses)
+import Data.Default (Default (def))
+import qualified System.Wlog as W
 
-import           OrgStat.Ast    (Org)
-import           OrgStat.CLI    (CommonArgs)
-import           OrgStat.Config (OrgStatConfig)
+import OrgStat.Ast (Org)
+import OrgStat.CLI (CommonArgs)
+import OrgStat.Config (OrgStatConfig)
 
 -- | Read-only app configuration.
 data WorkConfig = WorkConfig
@@ -63,7 +63,7 @@ newtype WorkM a = WorkM
                )
 
 instance W.HasLoggerName WorkM where
-    getLoggerName = pure $ W.LoggerName "OrgStat"
+    askLoggerName = pure $ W.LoggerName "OrgStat"
     modifyLoggerName _ = identity
 
 runWorkM :: MonadIO m => WorkConfig -> WorkM a -> m a

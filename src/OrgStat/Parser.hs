@@ -6,17 +6,17 @@ module OrgStat.Parser
        , runParser
        ) where
 
-import           Universum
+import Universum
 
-import           Control.Exception    (Exception)
+import Control.Exception (Exception)
 import qualified Data.Attoparsec.Text as A
-import qualified Data.OrgMode.Parse   as O
-import qualified Data.OrgMode.Types   as O
-import qualified Data.Text            as T
-import           Data.Time            (LocalTime (..), TimeOfDay (..), fromGregorian)
-import           Data.Time.Calendar   ()
+import qualified Data.OrgMode.Parse as O
+import qualified Data.OrgMode.Types as O
+import qualified Data.Text as T
+import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
+import Data.Time.Calendar ()
 
-import           OrgStat.Ast          (Clock (..), Org (..))
+import OrgStat.Ast (Clock (..), Org (..))
 
 ----------------------------------------------------------------------------
 -- Exceptions

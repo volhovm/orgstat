@@ -8,3 +8,4 @@ some.svg
 .hpc/
 *.tix
 dist/
+TAGS

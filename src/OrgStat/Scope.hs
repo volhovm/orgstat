@@ -13,14 +13,13 @@ module OrgStat.Scope
        , applyModifiers
        ) where
 
-import qualified Base                 as Base
-import           Control.Lens         (to)
-import           Control.Monad.Except (throwError)
-import qualified Data.Text            as T
-import           Universum
+import qualified Base as Base
+import Control.Lens (to)
+import Control.Monad.Except (throwError)
+import qualified Data.Text as T
+import Universum
 
-import           OrgStat.Ast          (Org, atDepth, orgClocks, orgSubtrees, orgTags,
-                                       orgTitle, traverseTree)
+import OrgStat.Ast (Org, atDepth, orgClocks, orgSubtrees, orgTags, orgTitle, traverseTree)
 
 -- | Path in org AST is just a list of paths, head ~ closer to tree
 -- root.
