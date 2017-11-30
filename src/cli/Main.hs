@@ -3,14 +3,16 @@
 
 module Main where
 
+import Universum
+
 import Data.Version (showVersion)
 import Options.Applicative.Simple (Parser, help, long, metavar, simpleOptions, strOption, switch,
                                    value)
 import Paths_orgstat (version)
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
-import System.Wlog (Severity (..), logDebug, logError, setupLogging, termSeveritiesOutB)
-import Universum
+import System.Wlog (Severity (..), logDebug, logError, logInfo, logWarning, productionB,
+                    setupLogging, severityPlus, termSeveritiesOutB)
 
 import OrgStat.CLI (CommonArgs, parseCommonArgs)
 import OrgStat.IO (readConfig)
@@ -51,7 +53,7 @@ main :: IO ()
 main = do
     args@Args{..} <- getNodeOptions =<< getHomeDirectory
     let sev = if debug then Debug else Info
-    setupLogging Nothing $ termSeveritiesOutB (one sev)
+    setupLogging Nothing $ productionB <> termSeveritiesOutB (severityPlus sev)
     config <- readConfig configPath
     runWorkM (WorkConfig config commonArgs) $ do
         logDebug $ "Just started with options: " <> show args
