@@ -1,3 +1,8 @@
+0.1.4
+=====
+
+* Updated orgmode-parse which fixes parsing issue: https://github.com/ixmatus/orgmode-parse/issues/35
+
 0.1.3
 =====
 

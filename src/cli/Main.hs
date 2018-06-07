@@ -11,8 +11,8 @@ import Options.Applicative.Simple (Parser, help, long, metavar, simpleOptions, s
 import Paths_orgstat (version)
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
-import System.Wlog (Severity (..), logDebug, logError, logInfo, logWarning, productionB,
-                    setupLogging, severityPlus, termSeveritiesOutB)
+import System.Wlog (Severity (..), logDebug, logError, productionB, setupLogging, severityPlus,
+                    termSeveritiesOutB)
 
 import OrgStat.CLI (CommonArgs, parseCommonArgs)
 import OrgStat.IO (readConfig)
