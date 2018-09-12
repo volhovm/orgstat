@@ -13,7 +13,7 @@ module OrgStat.Scope
        , applyModifiers
        ) where
 
-import qualified Base as Base
+import qualified Prelude as Base
 import Control.Lens (to)
 import Control.Monad.Except (throwError)
 import qualified Data.Text as T

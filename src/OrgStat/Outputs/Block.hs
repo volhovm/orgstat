@@ -6,7 +6,7 @@ module OrgStat.Outputs.Block
        ) where
 
 import Universum
-import Unsafe (unsafeLast)
+import qualified Data.List as List
 
 import qualified Data.Text as T
 import Text.PrettyPrint.Boxes (center1, hsep, left, render, right, text, vcat)
@@ -64,5 +64,5 @@ genBlockOutput BlockParams{..} (filterHasClock -> o0) = do
                 | otherwise =
                       concat $
                       map processChild (dropEnd 1 children) ++
-                      [processLastChild (unsafeLast children)]
+                      [processLastChild (List.last children)]
         (name,dur) : childrenProcessed
