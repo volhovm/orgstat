@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes      #-}
+{-# LANGUAGE DeriveGeneric   #-}
 {-# LANGUAGE TemplateHaskell #-}
 -- | Types common among reports.
 
@@ -25,6 +26,7 @@ import Universum
 
 import Control.Lens (makeLenses)
 
+import GHC.Generics as GHC
 import Data.Default (Default (..))
 import Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude as D
@@ -46,7 +48,9 @@ data TimelineParams = TimelineParams
       -- ^ Column height
     , _tpBackground   :: !(D.Colour Double)
       -- ^ Color of background
-    } deriving (Show)
+    } deriving (Show,GHC.Generic)
+
+instance Semigroup TimelineParams
 
 instance Default TimelineParams where
     def = TimelineParams 0 True 5 1 1 (D.sRGB24 0xf2 0xf2 0xf2)

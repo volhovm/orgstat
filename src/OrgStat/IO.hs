@@ -7,7 +7,7 @@ module OrgStat.IO
        , readConfig
        ) where
 
-import qualified Base as Base
+import qualified Prelude as Base
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO

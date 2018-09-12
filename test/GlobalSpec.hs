@@ -15,7 +15,7 @@ import           Test.QuickCheck       (Arbitrary (arbitrary), Gen, NonNegative 
                                         Positive (..), Small (..), choose, forAll,
                                         ioProperty, oneof, (.&&.), (===), (==>))
 import           Universum
-import           Unsafe                (unsafeTail)
+import           qualified Data.List
 
 import           OrgStat.Ast           (Clock (..), Org (..), atDepth, mergeClocks,
                                         orgClocks)
@@ -71,7 +71,7 @@ contOrg :: Int -> Int -> Gen Org
 contOrg dfrom dto = do
     (Positive i) <- arbitrary
     (checkpoints :: [LocalTime]) <- sort <$> replicateM (i+1) arbitrary
-    pairs <- forM (checkpoints `zip` unsafeTail checkpoints) $ \(c,c') -> do
+    pairs <- forM (checkpoints `zip` Data.List.tail checkpoints) $ \(c,c') -> do
         delta <- choose (dfrom,dto)
         pure (c, negate delta `addLocalTime` c')
     let clocks = map (uncurry Clock) pairs
