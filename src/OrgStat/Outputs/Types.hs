@@ -69,9 +69,11 @@ mergeParams lhs rhs = mods lhs
         if def ^. l == rhs ^. l
         then x else x & l .~ (rhs ^. l)
 
-instance Monoid TimelineParams where
-    mempty = def
-    mappend = mergeParams
+instance Semigroup TimelineParams where
+    (<>) = mergeParams
+
+--instance Monoid TimelineParams where
+--    mempty = def
 
 -- | SVG timeline image.
 newtype TimelineOutput = TimelineOutput (D.Diagram B)

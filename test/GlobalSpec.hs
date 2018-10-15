@@ -2,26 +2,23 @@
 
 module GlobalSpec (spec) where
 
-import           Control.Lens          (to)
-import           Data.Colour.SRGB      (sRGB24show)
-import qualified Data.Text             as T
-import           Data.Text.Arbitrary   ()
-import           Data.Time             (LocalTime (..), TimeOfDay (..), getZonedTime,
-                                        zonedTimeToLocalTime)
-import           Data.Time.Calendar    (addGregorianMonthsClip, fromGregorian)
-import           Test.Hspec            (Spec, describe, runIO)
-import           Test.Hspec.QuickCheck (prop)
-import           Test.QuickCheck       (Arbitrary (arbitrary), Gen, NonNegative (..),
-                                        Positive (..), Small (..), choose, forAll,
-                                        ioProperty, oneof, (.&&.), (===), (==>))
-import           Universum
-import           Unsafe                (unsafeTail)
+import Control.Lens (to)
+import Data.Colour.SRGB (sRGB24show)
+import qualified Data.List as L
+import qualified Data.Text as T
+import Data.Text.Arbitrary ()
+import Data.Time (LocalTime (..), TimeOfDay (..), getZonedTime, zonedTimeToLocalTime)
+import Data.Time.Calendar (addGregorianMonthsClip, fromGregorian)
+import Test.Hspec (Spec, describe, runIO)
+import Test.Hspec.QuickCheck (prop)
+import Test.QuickCheck (Arbitrary (arbitrary), Gen, NonNegative (..), Positive (..), Small (..),
+                        choose, forAll, ioProperty, oneof, (.&&.), (===), (==>))
+import Universum
 
-import           OrgStat.Ast           (Clock (..), Org (..), atDepth, mergeClocks,
-                                        orgClocks)
-import           OrgStat.Config        (ConfDate (..), ConfRange (..))
-import           OrgStat.Helpers       (convertRange)
-import           OrgStat.Util          (addLocalTime, parseColour)
+import OrgStat.Ast (Clock (..), Org (..), atDepth, mergeClocks, orgClocks)
+import OrgStat.Config (ConfDate (..), ConfRange (..))
+import OrgStat.Helpers (convertRange)
+import OrgStat.Util (addLocalTime, parseColour)
 
 
 spec :: Spec
@@ -71,7 +68,7 @@ contOrg :: Int -> Int -> Gen Org
 contOrg dfrom dto = do
     (Positive i) <- arbitrary
     (checkpoints :: [LocalTime]) <- sort <$> replicateM (i+1) arbitrary
-    pairs <- forM (checkpoints `zip` unsafeTail checkpoints) $ \(c,c') -> do
+    pairs <- forM (checkpoints `zip` L.tail checkpoints) $ \(c,c') -> do
         delta <- choose (dfrom,dto)
         pure (c, negate delta `addLocalTime` c')
     let clocks = map (uncurry Clock) pairs

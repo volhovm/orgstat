@@ -6,8 +6,8 @@ module OrgStat.Outputs.Block
        ) where
 
 import Universum
-import Unsafe (unsafeLast)
 
+import qualified Data.List as L
 import qualified Data.Text as T
 import Text.PrettyPrint.Boxes (center1, hsep, left, render, right, text, vcat)
 
@@ -34,10 +34,10 @@ genBlockOutput BlockParams{..} (filterHasClock -> o0) = do
   where
     BlockFrames{..} = if _bpUnicode then unicodeBlockFrames else asciiBlockFrames
     text' = text . toString
-    elems = withDepth (0::Int) o0
-    col1 = vcat left $ map (text' . trimTitle . fst) elems
-    col2 = vcat right $ map (text' . snd) elems
-    vsep = vcat center1 $ replicate (length elems) (text $ toString bfVertical)
+    elems' = withDepth (0::Int) o0
+    col1 = vcat left $ map (text' . trimTitle . fst) elems'
+    col2 = vcat right $ map (text' . snd) elems'
+    vsep = vcat center1 $ replicate (length elems') (text $ toString bfVertical)
 
     trimTitle t | T.length t > _bpMaxLength = T.take (_bpMaxLength - 3) t <> "..."
                 | otherwise = t
@@ -64,5 +64,5 @@ genBlockOutput BlockParams{..} (filterHasClock -> o0) = do
                 | otherwise =
                       concat $
                       map processChild (dropEnd 1 children) ++
-                      [processLastChild (unsafeLast children)]
+                      [processLastChild (L.last children)]
         (name,dur) : childrenProcessed

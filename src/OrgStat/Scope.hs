@@ -13,11 +13,12 @@ module OrgStat.Scope
        , applyModifiers
        ) where
 
-import qualified Base as Base
+import qualified Prelude
+import Universum
+
 import Control.Lens (to)
 import Control.Monad.Except (throwError)
 import qualified Data.Text as T
-import Universum
 
 import OrgStat.Ast (Org, atDepth, orgClocks, orgSubtrees, orgTags, orgTitle, traverseTree)
 
@@ -27,7 +28,7 @@ newtype AstPath = AstPath
     { getAstPath :: [Text]
     } deriving (Eq, Ord)
 
-instance Base.Show AstPath where
+instance Show AstPath where
     show (AstPath path)
         | null path = "<null_ast_path>"
         | otherwise = intercalate "/" (map T.unpack path)
@@ -44,7 +45,7 @@ atPath (AstPath p) f o = atPathDo p o
     atPathDo (x:xs) org =
         let match = find ((== x) . view orgTitle) $ org ^. orgSubtrees
             modified foo = org & orgSubtrees %~ foo . filter ((/= match) . Just)
-            fmapFoo Nothing   = modified identity
+            fmapFoo Nothing   = modified id
             fmapFoo (Just o') = modified (o' :)
         in case (xs,match) of
             (_,Nothing)   -> f Nothing $> org

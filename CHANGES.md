@@ -4,6 +4,7 @@ Unreleased
 * Support selecting multiple outputs in cli: --select-output can be used several times,
   also it's renamed into --output.
 * Remove log-warper dependency replacing with simple local logging.
+* Update deps: universum-1.4.0, fmt-0.6, orgmode-parse-0.2.2, also update lts to 12.5
 
 0.1.4
 =====

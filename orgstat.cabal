@@ -32,7 +32,7 @@ library
   build-depends:       aeson >= 0.11.2.0
                      , attoparsec
                      , ansi-terminal
-                     , base >=4.9 && <4.11
+                     , base >=4.11 && <4.12
                      , boxes >= 0.1.4
                      , bytestring
                      , colour >= 2.3.3
@@ -54,7 +54,7 @@ library
                      , text >= 1.2.2.1
                      , time >= 1.6.0.1
                      , turtle >= 1.2.8
-                     , universum >= 0.8.0
+                     , universum >= 1.4.0
                      , yaml >= 0.8.21.1
   hs-source-dirs:      src
   default-language:    Haskell2010
@@ -78,7 +78,7 @@ library
 executable orgstat
   main-is:             Main.hs
   other-modules:       Paths_orgstat
-  build-depends:       base >=4.9 && <4.11
+  build-depends:       base
                      , bytestring
                      , directory
                      , exceptions
@@ -102,7 +102,7 @@ test-suite orgstat-test
                      , GlobalSpec
   build-depends:       HUnit >= 1.3.1.2
                      , QuickCheck
-                     , base >=4.9 && <4.11
+                     , base
                      , colour >= 2.3.3
                      , hspec
                      , orgstat

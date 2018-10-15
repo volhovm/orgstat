@@ -7,15 +7,16 @@ module OrgStat.IO
        , readConfig
        ) where
 
-import qualified Base as Base
+import qualified Prelude
+import Universum
+
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import Data.Yaml (decodeEither)
+import Data.Yaml (decodeEither')
 import System.Directory (doesFileExist)
 import System.FilePath (takeBaseName, takeExtension)
 import Turtle (ExitCode (..), procStrict)
-import Universum
 
 import OrgStat.Ast (Org)
 import OrgStat.Config (ConfigException (ConfigParseException), OrgStatConfig)
@@ -30,7 +31,7 @@ data OrgIOException
       -- ^ Failed to run some external app (gpg)
     deriving (Typeable)
 
-instance Base.Show OrgIOException where
+instance Show OrgIOException where
     show (OrgIOException r)    = "IOException: " <> T.unpack r
     show (ExternalException r) = "ExternalException: " <> T.unpack r
 
@@ -75,6 +76,6 @@ readConfig fp = do
     unlessM (liftIO $ doesFileExist fp) $
         throwM $ OrgIOException $ "Config file " <> fpt <> " doesn't exist"
     res <- liftIO $ BS.readFile fp
-    either (throwM . ConfigParseException . T.pack) pure $ decodeEither res
+    either (throwM . ConfigParseException . show) pure $ decodeEither' res
   where
     fpt = T.pack fp

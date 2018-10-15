@@ -80,7 +80,7 @@ hashColour salt item = colours !! (hashWithSalt salt item `mod` length colours)
 
 -- | Maybe setter that does nothing on Nothing.
 (??~) :: ASetter s s a b -> Maybe b -> s -> s
-(??~) _ Nothing  = identity
+(??~) _ Nothing  = id
 (??~) l (Just k) = l .~ k
 
 -- | Time formatter in form HH:MM
