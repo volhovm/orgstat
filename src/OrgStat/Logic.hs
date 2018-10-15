@@ -13,12 +13,12 @@ import qualified Data.Text as T
 import Data.Time (defaultTimeLocale, formatTime, getZonedTime)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>))
-import System.Wlog (logDebug, logInfo)
 import Turtle (shell)
 
 import OrgStat.CLI (CommonArgs (..))
 import OrgStat.Config (ConfOutput (..), ConfOutputType (..), OrgStatConfig (..))
 import OrgStat.Helpers (resolveOutput, resolveReport)
+import OrgStat.Logging (logDebug, logInfo)
 import OrgStat.Outputs (genBlockOutput, genSummaryOutput, processTimeline, tpColorSalt, writeReport)
 import OrgStat.WorkMonad (WorkM, wcCommonArgs, wcConfig)
 

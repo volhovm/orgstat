@@ -14,12 +14,12 @@ import qualified Data.Text.IO as TIO
 import Data.Yaml (decodeEither)
 import System.Directory (doesFileExist)
 import System.FilePath (takeBaseName, takeExtension)
-import System.Wlog (WithLogger, logDebug)
 import Turtle (ExitCode (..), procStrict)
 import Universum
 
 import OrgStat.Ast (Org)
 import OrgStat.Config (ConfigException (ConfigParseException), OrgStatConfig)
+import OrgStat.Logging
 import OrgStat.Parser (runParser)
 import OrgStat.Util (dropEnd)
 
@@ -40,7 +40,7 @@ instance Exception OrgIOException
 -- decrypt it first. Returns a pair @(filename, content)@. It also
 -- takes a list of TODO-keywords to take header names correctly.
 readOrgFile
-    :: (MonadIO m, MonadCatch m, WithLogger m)
+    :: (MonadIO m, MonadCatch m)
     => [Text] -> FilePath -> m (Text, Org)
 readOrgFile todoKeywords fp = do
     logDebug $ "Reading org file " <> fpt

@@ -11,11 +11,10 @@ import Options.Applicative.Simple (Parser, help, long, metavar, simpleOptions, s
 import Paths_orgstat (version)
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
-import System.Wlog (Severity (..), logDebug, logError, productionB, setupLogging, severityPlus,
-                    termSeveritiesOutB)
 
 import OrgStat.CLI (CommonArgs, parseCommonArgs)
 import OrgStat.IO (readConfig)
+import OrgStat.Logging (Severity (..), initLogging, logDebug, logError)
 import OrgStat.Logic (runOrgStat)
 import OrgStat.WorkMonad (WorkConfig (..), runWorkM)
 
@@ -53,7 +52,7 @@ main :: IO ()
 main = do
     args@Args{..} <- getNodeOptions =<< getHomeDirectory
     let sev = if debug then Debug else Info
-    setupLogging Nothing $ productionB <> termSeveritiesOutB (severityPlus sev)
+    initLogging sev
     config <- readConfig configPath
     runWorkM (WorkConfig config commonArgs) $ do
         logDebug $ "Just started with options: " <> show args

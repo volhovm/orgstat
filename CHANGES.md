@@ -3,6 +3,7 @@ Unreleased
 
 * Support selecting multiple outputs in cli: --select-output can be used several times,
   also it's renamed into --output.
+* Remove log-warper dependency replacing with simple local logging.
 
 0.1.4
 =====

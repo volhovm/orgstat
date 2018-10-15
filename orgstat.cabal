@@ -16,6 +16,7 @@ library
                      , OrgStat.CLI
                      , OrgStat.Helpers
                      , OrgStat.IO
+                     , OrgStat.Logging
                      , OrgStat.Logic
                      , OrgStat.Parser
                      , OrgStat.Scope
@@ -30,6 +31,7 @@ library
                      , Paths_orgstat
   build-depends:       aeson >= 0.11.2.0
                      , attoparsec
+                     , ansi-terminal
                      , base >=4.9 && <4.11
                      , boxes >= 0.1.4
                      , bytestring
@@ -42,10 +44,10 @@ library
                      , exceptions >= 0.8.3
                      , filepath
                      , formatting
+                     , fmt
                      , hashable >= 1.2.4.0
                      , lens >= 4.14
                      , linear
-                     , log-warper >= 1.7.1
                      , mtl >= 2.2.1
                      , optparse-simple
                      , orgmode-parse >= 0.2.1
@@ -82,7 +84,6 @@ executable orgstat
                      , exceptions
                      , filepath
                      , formatting
-                     , log-warper
                      , optparse-simple
                      , orgstat
                      , universum

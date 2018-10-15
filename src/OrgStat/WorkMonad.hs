@@ -18,7 +18,6 @@ import Universum
 
 import Control.Lens (makeLenses)
 import Data.Default (Default (def))
-import qualified System.Wlog as W
 
 import OrgStat.Ast (Org)
 import OrgStat.CLI (CommonArgs)
@@ -57,14 +56,9 @@ newtype WorkM a = WorkM
                , MonadIO
                , MonadReader WorkConfig
                , MonadState WorkData
-               , W.CanLog
                , MonadThrow
                , MonadCatch
                )
-
-instance W.HasLoggerName WorkM where
-    askLoggerName = pure $ W.LoggerName "OrgStat"
-    modifyLoggerName _ = identity
 
 runWorkM :: MonadIO m => WorkConfig -> WorkM a -> m a
 runWorkM config action =
