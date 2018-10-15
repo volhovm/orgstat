@@ -35,12 +35,12 @@ runOrgStat = do
                             formatTime defaultTimeLocale "%F-%H-%M-%S" curTime
             liftIO $ createDirectoryIfMissing True reportDir
             pure reportDir
-    reportDir <- maybe createDir pure =<< views wcCommonArgs outputDir
+    reportDir <- maybe createDir pure =<< views wcCommonArgs caOutputDir
     logInfo $ "This report set will be put into: " <> fromString reportDir
 
+    cliOuts <- views wcCommonArgs caOutputs
     outputsToProcess <-
-        maybe (pure confOutputs) (fmap one . resolveOutput) =<<
-        views wcCommonArgs selectOutput
+        bool (mapM resolveOutput cliOuts) (pure confOutputs) (null cliOuts)
     forM_ outputsToProcess $ \ConfOutput{..} -> do
         logInfo $ "Processing output " <> coName
         let prePath = reportDir </> T.unpack coName
@@ -59,7 +59,7 @@ runOrgStat = do
                 resolved <- resolveReport boReport
                 let res = genBlockOutput boParams resolved
                 writeReport prePath res
-    whenM (views wcCommonArgs xdgOpen) $ do
+    whenM (views wcCommonArgs caXdgOpen) $ do
         logInfo "Opening reports using xdg-open..."
         void $ shell ("for i in $(ls "<>T.pack reportDir<>"/*); do xdg-open $i; done") empty
     logInfo "Done"
