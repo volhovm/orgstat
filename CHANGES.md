@@ -1,4 +1,4 @@
-Unreleased
+0.1.5
 ==========
 
 * Support selecting multiple outputs in cli: --select-output can be used several times,
