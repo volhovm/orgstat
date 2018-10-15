@@ -13,7 +13,7 @@ import qualified Data.Attoparsec.Text as A
 import qualified Data.OrgMode.Parse as O
 import qualified Data.OrgMode.Types as O
 import qualified Data.Text as T
-import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian)
+import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian, getZonedTime, zonedTimeToLocalTime)
 import Data.Time.Calendar ()
 
 import OrgStat.Ast (Clock (..), Org (..))
@@ -32,8 +32,8 @@ instance Exception ParsingException
 -- Parsing
 ----------------------------------------------------------------------------
 
-parseOrg :: [Text] -> A.Parser Org
-parseOrg todoKeywords = convertDocument <$> O.parseDocument todoKeywords
+parseOrg :: LocalTime -> [Text] -> A.Parser Org
+parseOrg curTime todoKeywords = convertDocument <$> O.parseDocument todoKeywords
   where
     convertDocument :: O.Document -> Org
     convertDocument (O.Document _ headings) = Org
@@ -70,6 +70,8 @@ parseOrg todoKeywords = convertDocument <$> O.parseDocument todoKeywords
     convertClock :: O.Clock -> Maybe Clock
     convertClock (O.Clock (Just (O.Timestamp start _active (Just end)), _duration)) =
         Clock <$> convertDateTime start <*> convertDateTime end
+    convertClock (O.Clock (Just (O.Timestamp start _active Nothing), _duration)) =
+        Clock <$> convertDateTime start <*> pure curTime
     convertClock _                                                 = Nothing
 
     -- Nothing for DateTime without time-of-day
@@ -85,8 +87,9 @@ parseOrg todoKeywords = convertDocument <$> O.parseDocument todoKeywords
     convertDateTime _ = Nothing
 
 -- Throw parsing exception if it can't be parsed (use Control.Monad.Catch#throwM)
-runParser :: (MonadThrow m) => [Text] -> Text -> m Org
-runParser todoKeywords t =
-    case A.parseOnly (parseOrg todoKeywords) t of
+runParser :: (MonadIO m, MonadThrow m) => [Text] -> Text -> m Org
+runParser todoKeywords t = do
+    localTime <- liftIO $ zonedTimeToLocalTime <$> getZonedTime
+    case A.parseOnly (parseOrg localTime todoKeywords) t of
       Left err  -> throwM $ ParsingException $ T.pack err
       Right res -> pure res
