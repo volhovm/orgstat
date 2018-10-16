@@ -96,7 +96,9 @@ instance FromJSON ScopeModifier where
         o .: "type" >>= \case
             (String "prune") -> ModPruneSubtree <$> o .: "path" <*> o .:? "depth" .!= 0
             (String "select") -> ModSelectSubtree <$> o .: "path"
-            (String "filterbytag") -> ModFilterTag <$> o .: "tag"
+            (String "filterbytag") ->
+                (ModFilterTags . (\x -> [x]) <$> o .: "tag") <|>
+                (ModFilterTags <$> o .: "tags")
             other -> fail $ "Unsupported scope modifier type: " ++ show other
 
 instance FromJSON ConfDate where

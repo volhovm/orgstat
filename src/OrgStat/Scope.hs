@@ -60,9 +60,9 @@ existsPath p o = o ^. atPath p . to isJust
 data ScopeModifier
     = ModPruneSubtree AstPath Int
       -- ^ Turns all subtrees starting with @path@ and then on depth @d@ into leaves.
-    | ModFilterTag Text
-      -- ^ Given text tag name, it leaves only those subtrees that
-      -- have this tag (tags are inherited).
+    | ModFilterTags [Text]
+      -- ^ Given text tag names, it leaves only those subtrees that
+      -- have one of these tag (tags are inherited).
     | ModSquash AstPath
       -- ^ Starting at node on path A and depth n, turn A into set of
       -- nodes A/a1/a2/.../an. Doesn't work/make sense for empty path.
@@ -96,8 +96,8 @@ applyModifier m@(ModSelectSubtree path) org = do
     pure $
         fromMaybe (error "applyModifier@ModSelectSubtree is broken") $
         org ^. atPath path
-applyModifier (ModFilterTag tag) o0 = do
-    let matchesTag o = any (== tag) (o ^. orgTags)
+applyModifier (ModFilterTags tags) o0 = do
+    let matchesTag o = any (`elem` tags) (o ^. orgTags)
     let dfs :: Org -> Maybe Org
         dfs o | matchesTag o = Just o
               | otherwise = case mapMaybe dfs (o ^. orgSubtrees) of

@@ -1,5 +1,10 @@
-0.1.5
+Unreleased
 ==========
+* Support or tags -- now it's possible to specify "t1 | t2 | t3" as a modifier by
+  providing a list of tags in config.
+
+0.1.5
+=====
 
 * Support selecting multiple outputs in cli: --select-output can be used several times,
   also it's renamed into --output.
