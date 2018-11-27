@@ -1,7 +1,9 @@
 Unreleased
 ==========
-* Support or tags -- now it's possible to specify "t1 | t2 | t3" as a modifier by
+* Support "or" tags -- now it's possible to specify "t1 | t2 | t3" as a modifier by
   providing a list of tags in config.
+* Support of file-level tags: "#+FILETAGS: :tagA:tagB:tagC:" is correctly parsed
+  and tags are propagated to all the file tree headers.
 
 0.1.5
 =====

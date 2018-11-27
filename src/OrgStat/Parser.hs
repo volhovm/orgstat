@@ -10,13 +10,14 @@ import Universum
 
 import Control.Exception (Exception)
 import qualified Data.Attoparsec.Text as A
+import Data.Char (isSpace)
 import qualified Data.OrgMode.Parse as O
 import qualified Data.OrgMode.Types as O
 import qualified Data.Text as T
 import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian, getZonedTime, zonedTimeToLocalTime)
 import Data.Time.Calendar ()
 
-import OrgStat.Ast (Clock (..), Org (..))
+import OrgStat.Ast (Clock (..), Org (..), orgTags, traverseTree)
 
 ----------------------------------------------------------------------------
 -- Exceptions
@@ -36,12 +37,15 @@ parseOrg :: LocalTime -> [Text] -> A.Parser Org
 parseOrg curTime todoKeywords = convertDocument <$> O.parseDocument todoKeywords
   where
     convertDocument :: O.Document -> Org
-    convertDocument (O.Document _ headings) = Org
-        { _orgTitle    = ""
-        , _orgTags     = []
-        , _orgClocks   = []
-        , _orgSubtrees = map convertHeading headings
-        }
+    convertDocument (O.Document textBefore headings) =
+        let fileLvlTags = extractFileTags textBefore
+            addTags t = ordNub $ fileLvlTags <> t
+            o = Org { _orgTitle    = ""
+                    , _orgTags     = []
+                    , _orgClocks   = []
+                    , _orgSubtrees = map convertHeading headings
+                    }
+        in o & traverseTree . orgTags %~ addTags
 
     convertHeading :: O.Headline -> Org
     convertHeading headline = Org
@@ -85,6 +89,18 @@ parseOrg curTime todoKeywords = convertDocument <$> O.parseDocument todoKeywords
           (fromGregorian (toInteger year) month day)
           (TimeOfDay hour minute 0)
     convertDateTime _ = Nothing
+
+    extractFileTags (T.lines -> inputLines) =
+        let prfx = "#+FILETAGS: "
+            matching =
+                map (T.drop (length prfx)) $
+                (filter (prfx `T.isPrefixOf`) inputLines)
+            toTags (T.strip -> line) =
+                let parts = filter (not . T.null) $ T.splitOn ":" line
+                    -- Correct tag shouldn't contain spaces inside
+                    correctPart p = not $ T.any isSpace p
+                in if all correctPart parts then parts else []
+        in ordNub $ concatMap toTags matching
 
 -- Throw parsing exception if it can't be parsed (use Control.Monad.Catch#throwM)
 runParser :: (MonadIO m, MonadThrow m) => [Text] -> Text -> m Org
