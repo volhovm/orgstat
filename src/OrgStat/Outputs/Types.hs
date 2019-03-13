@@ -15,6 +15,8 @@ module OrgStat.Outputs.Types
        , SummaryParams (..)
        , SummaryOutput (..)
 
+       , ScriptParams (..)
+
        , BlockParams (..)
        , bpMaxLength
        , bpUnicode
@@ -92,6 +94,18 @@ data SummaryParams = SummaryParams
 newtype SummaryOutput = SummaryOutput Text
 
 ----------------------------------------------------------------------------
+-- Script
+----------------------------------------------------------------------------
+
+-- | Parameters of the summary output
+data ScriptParams = ScriptParams
+    { spScript  :: !(Either FilePath Text)
+      -- ^ Either path to the script to execute, or a script text itself.
+    , spReports :: ![Text]
+      -- ^ Reports to consider.
+    } deriving Show
+
+----------------------------------------------------------------------------
 -- Block
 ----------------------------------------------------------------------------
 
@@ -100,6 +114,7 @@ data BlockParams = BlockParams
     { _bpMaxLength :: Int
       -- ^ Maximum title length (together with indentation).
     , _bpUnicode   :: Bool
+      -- ^ Should unicode symbols be used for box borders.
     } deriving (Show)
 
 makeLenses ''BlockParams

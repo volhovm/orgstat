@@ -24,6 +24,7 @@ library
                      , OrgStat.Outputs.Block
                      , OrgStat.Outputs.Class
                      , OrgStat.Outputs.Summary
+                     , OrgStat.Outputs.Script
                      , OrgStat.Outputs.Timeline
                      , OrgStat.Outputs.Types
                      , OrgStat.Util
@@ -44,13 +45,13 @@ library
                      , exceptions >= 0.8.3
                      , filepath
                      , formatting
-                     , fmt
+                     , fmt >= 0.6
                      , hashable >= 1.2.4.0
                      , lens >= 4.14
-                     , linear
                      , mtl >= 2.2.1
                      , optparse-simple
                      , orgmode-parse >= 0.2.1 && < 0.3
+                     , process >= 1.6.3.0
                      , text >= 1.2.2.1
                      , time >= 1.6.0.1
                      , turtle >= 1.2.8

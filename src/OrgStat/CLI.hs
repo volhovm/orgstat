@@ -29,9 +29,9 @@ parseCommonArgs =
         strOption (long "output" <>
                    long "select-output" <>
                    help ("Output name(s) you want to process " <>
-                         "(by default all outputs from conf are selected)"))) <*>
+                         "(default: all outputs are processed)"))) <*>
     optional (
         strOption (long "output-dir" <>
                    metavar "FILEPATH" <>
                    help ("Final output directory that overrides one in config. " <>
-                         "No extra subdirectories will be created!")))
+                         "No extra subdirectories will be created")))

@@ -1,21 +1,24 @@
-# This is example orgstat configuration file. Sadly it's still 
-# poor, so check out Config.hs for more options if needed.
+## This is example orgstat configuration file. Sadly it's still 
+## poorly documented, so check out Config.hs for more options in 
+## case something is missing.
 
-# Scopes are sets of org-mode files you consider as one
+
+# Scopes are sets of org-mode files you consider as one single
 # working tree. Different possible scopes are possible, but
 # in general it's convenient to work with a single one, controlling
 # output with scope modifiers.
 scopes:
+  # Scope without name is given the name "default". 
+  # In this particular example, the scope is represented by tree with 
+  # three root directories: /study/, /work/, and /private/. 
   - paths: [/home/username/org/study.org, /home/username/org/work.org, /home/username/org/private.org.gpg]
+  # This creates a tree with only one /secretAgentLife/ root directory.
   - name: alternative
     paths: [/home/username/secretAgentLife.org]
-# Default configuration for timeline
-timelineDefault:
-  colWidth: 1.2         # width of single timeline column
-  colHeight: 1.1        # height of single timeline column
-  topDay: 8             # number of items in per-day longest-top list
-  legend: true          # should legend be shown (true by default)
-  background: '#ff00aa' # background color, grey by default
+
+# Reports are temporary internal representations of summaries that
+# we want to later output. Report works within the scope, applying 
+# modifiers that change the working tree.
 reports:
   # Current week, all tasks
   - name: curWeekFull
@@ -49,30 +52,73 @@ reports:
     range: week-1
     modifiers:
       - type: filterbytag
-        tag: work # that's the tag name
+        tag: work # Tag name
+        # Multiple tags are supported (as in "a|b")
+        # tags: [work,study] # 
+
+# Outputs are the ways to represent/materialise the reports. One report can
+# be outputed in several different ways. There is a discrete number of
+# outputs available.
 outputs:
-  # Timeline reports.
+
+  # Timeline output, it outputs the timeline svg from the report.
   - name: curWeekFullTimeline
     type: timeline
     report: curWeekFull
   - name: curWeekTopTimeline
     report: curWeekTop
     type: timeline
-    background: '#ffaa77'
-  # Nifty stats with a template -- you can put it into your bar!
+    background: '#ffaa77' # Optional
+
+  # Statistics output accumulates total report durations into variable 
+  # and injects them into the given template. Finally, it writes the 
+  # resulting string into the file.
   - name: thisWeekStats
     type: summary
     template: "work: %prevWeekWork%, study: %prevWeekStudy%"
-  # Just output it somehow. Useful for debugging.
-  - name: someDebugOutput
+
+  # Script output is the generalisation of the previous one.
+  # It will take a script and execute it with durations of 
+  # reports injected as environment variable with the same name.
+  - name: scriptOutput
+    type: script
+    # One can choose between inline script or a path to the file
+    inline: "echo $prevWeekWork > file.txt"
+    # scriptPath: /path/to/script.sh
+
+    # Reports to consider. Since we don't know generally what reports
+    # are used inside the script, they can be specified here.
+    # If this list is empty (default), then *all* reports will
+    # be ran and injected!
+    reports: [prevWeekWork] 
+
+  # Block output is something similar to the org-report -- it builds
+  # a table with items and durations. Is useful for debugging.
+  - name: blockOutput
     type: block
-    unicode: true
-    maxLength: 60
+    unicode: true # Optional, default true
+    maxLength: 60 # Optional, default 80
     report: curWeekTop
-# Output folder. Subfolder for report will be auto-generated. 
-outputDir: /home/username/reps/orgstat/
+ 
+
+
 # Must contain all todo keywords you use in files, because
 # otherwise parsed headings' titles will contain them prepended.
 todoKeywords: [ TODO, STARTED, WAITING, DONE, CANCELED ]
-# Salt that controls coloring of report items
-colorSalt: 3
+
+# Default outputs parent folder. Subfolder for the particular output 
+# will be auto-generated. 
+outputDir: /home/username/reps/orgstat/
+
+
+# Optional parameters controlling timeline output:
+
+# TODO Move salt to timeline params
+colorSalt: 3 # Salt that controls coloring of report items, default 0 
+timelineDefault:
+  colWidth: 1.2         # Width of single timeline column, default 1
+  colHeight: 1.1        # Height of single timeline column, default 1
+  topDay: 8             # Number of items in per-day longest-top list, default 5
+  legend: true          # Should legend be shown, default true
+  background: '#ff00aa' # Background color, default #f2f2f2
+

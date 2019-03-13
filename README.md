@@ -7,7 +7,8 @@ Orgstat is a statistics visualizer tool for org-mode. Given a set of org-mode fi
 it parses AST, applies modifications such as tag filtering, pruning or selecting a subtree (which yields a _report_) and generates _output_ using specified params. Currently supported output types are:
 * Timeline output: that's a svg image describing what took your time on every day of selected report range. 
 * Summary output: you specify the template string with `%reportName%` in it and it replaces each such occurrence with total hours spent on report. Useful for putting this info into your status bar.
-* Block output: that's what you'd expect from default org report generator, though formatting is more similar to one that `tree` unix utility provides.
+* Script output: a generalisation of the summary output. Selected reports' durations are set as ENV variables and then the user's script is run in this new environment.
+* Block output: that's what you'd expect from the default org report generator, though formatting is more similar to one that `tree` unix utility provides.
 
 ## Building/installing
 
@@ -17,13 +18,14 @@ Since `orgstat` is also available on hackage, you can use `cabal install orgstat
 
 ## Running
 
-Check out `orgstatExample.yaml` configuration file (config is used to parametrize report) and `orgstat --help`:
+Check out [orgstatExample.yaml](./orgstatExample.yaml) sample configuration file (config is used to parametrize report) and `orgstat --help`:
 ```
-ξ> stack exec orgstat -- --help
+$> orgstat --help
 ----- OrgStat ------
 
 Usage: orgstat [--version] [--help] [--conf-path FILEPATH] [--debug]
-               [--xdg-open] [--select-output ARG] [--output-dir FILEPATH]
+               [--xdg-open] [--output|--select-output ARG]
+               [--output-dir FILEPATH]
   Statistic reports visualizer for org-mode
 
 Available options:
@@ -32,12 +34,16 @@ Available options:
   --conf-path FILEPATH     Path to the configuration file
   --debug                  Enable debug logging
   --xdg-open               Open each report using xdg-open
-  --select-output ARG      Output name you want to process (by default all
-                           outputs from conf are processed
+  --output,--select-output ARG
+                           Output name(s) you want to process (default: all
+                           outputs are processed)
   --output-dir FILEPATH    Final output directory that overrides one in config.
-                           No extra subdirectories will be created!
+                           No extra subdirectories will be created
+
 ```
 ## Examples
+
+See the [orgstatExample.yaml](./orgstatExample.yaml) configuration file.
 
 Here how timeline report output looks like:
 ![Orgstat timeline report example](https://raw.githubusercontent.com/volhovM/orgstat/master/example.png)

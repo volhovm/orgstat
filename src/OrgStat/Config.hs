@@ -25,9 +25,9 @@ import Data.Time (LocalTime)
 import Data.Time.Format (defaultTimeLocale, parseTimeM)
 import Universum
 
-import OrgStat.Outputs.Types (BlockParams, SummaryParams (..), TimelineParams, bpMaxLength,
-                              bpUnicode, tpBackground, tpColumnHeight, tpColumnWidth, tpLegend,
-                              tpTopDay)
+import OrgStat.Outputs.Types (BlockParams, ScriptParams (..), SummaryParams (..), TimelineParams,
+                              bpMaxLength, bpUnicode, tpBackground, tpColumnHeight, tpColumnWidth,
+                              tpLegend, tpTopDay)
 import OrgStat.Scope (AstPath (..), ScopeModifier (..))
 import OrgStat.Util (parseColour, (??~))
 
@@ -56,6 +56,7 @@ data ConfOutputType
     = TimelineOutput { toParams :: !TimelineParams
                      , toReport :: !Text }
     | SummaryOutput !SummaryParams
+    | ScriptOutput !ScriptParams
     | BlockOutput { boParams :: !BlockParams
                   , boReport :: !Text }
     deriving (Show)
@@ -157,10 +158,16 @@ instance FromJSON ConfOutputType where
             (String "summary") -> do
                 soTemplate <- o .: "template"
                 pure $ SummaryOutput $ SummaryParams soTemplate
+            (String "script") -> do
+                spScript <-
+                    fmap Left (o .: "scriptPath") <|>
+                    fmap Right (o .: "inline")
+                spReports <- o .: "reports"
+                pure $ ScriptOutput $ ScriptParams spScript spReports
             (String "block") -> do
                 boReport <- o .: "report"
-                maxLength <- o .: "maxLength"
-                unicode <- o .: "unicode"
+                maxLength <- o .:? "maxLength"
+                unicode  <- o .:? "unicode"
                 let boParams = def & bpMaxLength ??~ maxLength
                                    & bpUnicode ??~ unicode
                 pure $ BlockOutput {..}
@@ -168,8 +175,8 @@ instance FromJSON ConfOutputType where
 
 instance FromJSON ConfOutput where
     parseJSON = withObject "ConfOutput" $ \o -> do
-        coName   <- o .: "name"
-        coType  <- parseJSON (Object o)
+        coName <- o .: "name"
+        coType <- parseJSON (Object o)
         pure $ ConfOutput{..}
 
 instance FromJSON ConfScope where

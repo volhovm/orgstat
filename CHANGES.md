@@ -4,6 +4,8 @@ Unreleased
   providing a list of tags in config.
 * Support of file-level tags: "#+FILETAGS: :tagA:tagB:tagC:" is correctly parsed
   and tags are propagated to all the file tree headers.
+* Added new output type -- script output.
+* Improved documentation, in particular in the orgstatExample.yaml.
 
 0.1.5
 =====
