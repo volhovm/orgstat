@@ -6,6 +6,8 @@ nix:
 extra-deps:
 - fmt-0.6
 - universum-1.4.0
-- orgmode-parse-0.2.2
+#- orgmode-parse-0.3.0
+- git: https://github.com/ixmatus/orgmode-parse
+  commit: ce152776307e3a019c2047e459a74eeab05566df
 - thyme-0.3.5.5 # required by orgmode-parse
 
