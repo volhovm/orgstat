@@ -50,32 +50,8 @@ data TimelineParams = TimelineParams
       -- ^ Color of background
     } deriving (Show)
 
-instance Default TimelineParams where
-    def = TimelineParams 0 True 5 1 1 (D.sRGB24 0xf2 0xf2 0xf2)
-
 makeLenses ''TimelineParams
 
--- | For all non-default field values of RHS, override LHS with them.
-mergeParams :: TimelineParams -> TimelineParams -> TimelineParams
-mergeParams lhs rhs = mods lhs
-  where
-    mods = foldr1 (.)
-           [ asId tpColorSalt
-           , asId tpLegend
-           , asId tpTopDay
-           , asId tpColumnWidth
-           , asId tpColumnHeight
-           , asId tpBackground ]
-    asId :: forall b. (Eq b) => Lens' TimelineParams b -> TimelineParams -> TimelineParams
-    asId l x =
-        if def ^. l == rhs ^. l
-        then x else x & l .~ (rhs ^. l)
-
-instance Semigroup TimelineParams where
-    (<>) = mergeParams
-
---instance Monoid TimelineParams where
---    mempty = def
 
 -- | SVG timeline image.
 newtype TimelineOutput = TimelineOutput (D.Diagram B)
@@ -111,9 +87,9 @@ data ScriptParams = ScriptParams
 
 -- | Parameters for block output. Stub (for now).
 data BlockParams = BlockParams
-    { _bpMaxLength :: Int
+    { _bpMaxLength :: !Int
       -- ^ Maximum title length (together with indentation).
-    , _bpUnicode   :: Bool
+    , _bpUnicode   :: !Bool
       -- ^ Should unicode symbols be used for box borders.
     } deriving (Show)
 

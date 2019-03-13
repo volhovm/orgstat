@@ -68,7 +68,6 @@ outputs:
   - name: curWeekTopTimeline
     report: curWeekTop
     type: timeline
-    background: '#ffaa77' # Optional
 
   # Statistics output accumulates total report durations into variable 
   # and injects them into the given template. Finally, it writes the 
@@ -112,13 +111,11 @@ outputDir: /home/username/reps/orgstat/
 
 
 # Optional parameters controlling timeline output:
-
-# TODO Move salt to timeline params
-colorSalt: 3 # Salt that controls coloring of report items, default 0 
 timelineDefault:
+  colorSalt: 3          # Salt that controls coloring of report items, default 0 
   colWidth: 1.2         # Width of single timeline column, default 1
   colHeight: 1.1        # Height of single timeline column, default 1
   topDay: 8             # Number of items in per-day longest-top list, default 5
   legend: true          # Should legend be shown, default true
-  background: '#ff00aa' # Background color, default #f2f2f2
+  background: '#ff00aa' # Background color, default white
 

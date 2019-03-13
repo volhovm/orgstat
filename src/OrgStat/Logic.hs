@@ -20,7 +20,7 @@ import OrgStat.Config (ConfOutput (..), ConfOutputType (..), OrgStatConfig (..))
 import OrgStat.Helpers (resolveOutput, resolveReport)
 import OrgStat.Logging (logDebug, logInfo)
 import OrgStat.Outputs (genBlockOutput, genSummaryOutput, processScriptOutput, processTimeline,
-                        tpColorSalt, writeReport)
+                        writeReport)
 import OrgStat.WorkMonad (WorkM, wcCommonArgs, wcConfig)
 
 -- | Main application logic.
@@ -53,9 +53,7 @@ runOrgStat = do
         case coType of
             TimelineOutput {..} -> do
                 resolved <- resolveReport toReport
-                let timelineParamsFinal =
-                        (confBaseTimelineParams <> toParams) & tpColorSalt .~ confColorSalt
-                let timeline = processTimeline timelineParamsFinal resolved
+                let timeline = processTimeline confTimelineParams resolved
                 logDebug $ "Generating timeline report " <> coName <> "..."
                 writeOutput coName timeline
             SummaryOutput params -> do

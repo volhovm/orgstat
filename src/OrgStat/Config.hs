@@ -18,18 +18,16 @@ module OrgStat.Config
 
 import Data.Aeson (FromJSON (..), Value (Object, String), withObject, withText, (.!=), (.:), (.:?))
 import Data.Aeson.Types (typeMismatch)
-import Data.Default (def)
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Text as T
 import Data.Time (LocalTime)
 import Data.Time.Format (defaultTimeLocale, parseTimeM)
 import Universum
 
-import OrgStat.Outputs.Types (BlockParams, ScriptParams (..), SummaryParams (..), TimelineParams,
-                              bpMaxLength, bpUnicode, tpBackground, tpColumnHeight, tpColumnWidth,
-                              tpLegend, tpTopDay)
+import OrgStat.Outputs.Types (BlockParams (..), ScriptParams (..), SummaryParams (..),
+                              TimelineParams (..))
 import OrgStat.Scope (AstPath (..), ScopeModifier (..))
-import OrgStat.Util (parseColour, (??~))
+import OrgStat.Util (parseColour)
 
 -- | Exception type for everything bad that happens with config,
 -- starting from parsing to logic errors.
@@ -79,13 +77,12 @@ data ConfReport = ConfReport
     } deriving (Show)
 
 data OrgStatConfig = OrgStatConfig
-    { confScopes             :: ![ConfScope]
-    , confReports            :: ![ConfReport]
-    , confOutputs            :: ![ConfOutput]
-    , confBaseTimelineParams :: !TimelineParams
-    , confTodoKeywords       :: ![Text]
-    , confOutputDir          :: !FilePath -- default is "./orgstat"
-    , confColorSalt          :: !Int
+    { confScopes         :: ![ConfScope]
+    , confReports        :: ![ConfReport]
+    , confOutputs        :: ![ConfOutput]
+    , confTimelineParams :: !TimelineParams
+    , confTodoKeywords   :: ![Text]
+    , confOutputDir      :: !FilePath -- default is "./orgstat"
     } deriving (Show)
 
 instance FromJSON AstPath where
@@ -137,16 +134,15 @@ instance FromJSON ConfRange where
 
 instance FromJSON TimelineParams where
     parseJSON = withObject "TimelineParams" $ \v -> do
-        legend <- v .:? "legend"
-        topDay <- v .:? "topDay"
-        colWidth <- v .:? "colWidth"
-        colHeight <- v .:? "colHeight"
-        bgColorRaw <- v .:? "background"
-        pure $ def & tpLegend ??~ legend
-                   & tpTopDay ??~ topDay
-                   & tpColumnWidth ??~ colWidth
-                   & tpColumnHeight ??~ colHeight
-                   & tpBackground ??~ (T.strip <$> bgColorRaw >>= parseColour @Text)
+        _tpColorSalt <- v .:? "colorSalt" .!= 0
+        _tpLegend <- v .:? "legend" .!= True
+        _tpTopDay <- v .:? "topDay" .!= 5
+        _tpColumnWidth <- v .:? "colWidth" .!= 1.0
+        _tpColumnHeight <- v .:? "colHeight" .!= 1.0
+        _tpBackground <-
+            (fromMaybe (error "Can't parse colour") . parseColour @Text . T.strip) <$>
+            v .:? "background" .!= "#ffffff"
+        pure TimelineParams{..}
 
 instance FromJSON ConfOutputType where
     parseJSON = withObject "ConfOutputType" $ \o ->
@@ -166,10 +162,9 @@ instance FromJSON ConfOutputType where
                 pure $ ScriptOutput $ ScriptParams spScript spReports
             (String "block") -> do
                 boReport <- o .: "report"
-                maxLength <- o .:? "maxLength"
-                unicode  <- o .:? "unicode"
-                let boParams = def & bpMaxLength ??~ maxLength
-                                   & bpUnicode ??~ unicode
+                _bpMaxLength <- o .:? "maxLength" .!= 80
+                _bpUnicode  <- o .:? "unicode" .!= True
+                let boParams = BlockParams{..}
                 pure $ BlockOutput {..}
             other -> fail $ "Unsupported output type: " ++ show other
 
@@ -196,7 +191,8 @@ instance FromJSON OrgStatConfig where
         OrgStatConfig <$> o .: "scopes"
                       <*> o .: "reports"
                       <*> o .: "outputs"
-                      <*> o .:? "timelineDefault" .!= def
+                      -- timelineDefault is deprecated
+                      <*> ((o .: "timelineParams" <|> o .: "timelineDefault")
+                           <|> parseJSON (Object mempty))
                       <*> o .:? "todoKeywords" .!= []
                       <*> (o .:? "outputDir" <|> o .:? "output") .!= "./orgstat"
-                      <*> o .:? "colorSalt" .!= 0
