@@ -7,8 +7,8 @@
 * Added new output type -- script output.
 * Improved documentation, in particular in the orgstatExample.yaml.
 * Breaking: Configuration changes:
-  * Simplifed the configuration, now there's only one default timeline config,
-    which cannot be overriden on a per-output basis.
+  * Simplified the configuration, now there's only one default timeline config,
+    which cannot be overridden on a per-output basis.
   * Config parameter `colorSalt` was removed, use `timelineDefault.colorSalt` instead.
   * Timeline default color is now white.
   * timelineDefault renamed into timelineParams.
