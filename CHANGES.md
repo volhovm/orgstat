@@ -1,4 +1,4 @@
-Unreleased
+0.1.6
 ==========
 * Support "or" tags -- now it's possible to specify "t1 | t2 | t3" as a modifier by
   providing a list of tags in config.
