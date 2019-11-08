@@ -1,3 +1,9 @@
+0.1.7
+==========
+* Switch "script" output interpreter from "sh" to "/bin/env sh".
+* Update universum and orgmode-parse version (includes
+  https://github.com/ixmatus/orgmode-parse/pull/53)
+
 0.1.6
 ==========
 * Support "or" tags -- now it's possible to specify "t1 | t2 | t3" as a modifier by

@@ -23,13 +23,13 @@ module OrgStat.Outputs.Types
        , BlockOutput (..)
        ) where
 
-import Universum
+import           Universum
 
-import Control.Lens (makeLenses)
+import           Control.Lens         (makeLenses)
 
-import Data.Default (Default (..))
-import Diagrams.Backend.SVG (B)
-import qualified Diagrams.Prelude as D
+import           Data.Default         (Default (..))
+import           Diagrams.Backend.SVG (B)
+import qualified Diagrams.Prelude     as D
 
 ----------------------------------------------------------------------------
 -- Timeline
@@ -75,10 +75,12 @@ newtype SummaryOutput = SummaryOutput Text
 
 -- | Parameters of the summary output
 data ScriptParams = ScriptParams
-    { spScript  :: !(Either FilePath Text)
+    { spScript      :: !(Either FilePath Text)
       -- ^ Either path to the script to execute, or a script text itself.
-    , spReports :: ![Text]
+    , spReports     :: ![Text]
       -- ^ Reports to consider.
+    , spInterpreter :: !String
+      -- ^ Interpreter to use.
     } deriving Show
 
 ----------------------------------------------------------------------------

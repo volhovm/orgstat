@@ -45,8 +45,8 @@ data ConfDate
 
 data ConfRange
     = ConfFromTo !ConfDate !ConfDate
-    | ConfBlockWeek !Integer
     | ConfBlockDay !Integer
+    | ConfBlockWeek !Integer
     | ConfBlockMonth !Integer
     deriving (Show)
 
@@ -159,7 +159,8 @@ instance FromJSON ConfOutputType where
                     fmap Left (o .: "scriptPath") <|>
                     fmap Right (o .: "inline")
                 spReports <- o .: "reports"
-                pure $ ScriptOutput $ ScriptParams spScript spReports
+                spInterpreter <- o .:? "interpreter" .!= "sh"
+                pure $ ScriptOutput $ ScriptParams spScript spReports spInterpreter
             (String "block") -> do
                 boReport <- o .: "report"
                 _bpMaxLength <- o .:? "maxLength" .!= 80

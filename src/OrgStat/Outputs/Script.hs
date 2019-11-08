@@ -15,6 +15,7 @@ import System.Process (callCommand)
 import OrgStat.Ast (filterHasClock, orgTotalDuration)
 import OrgStat.Config (confReports, crName)
 import OrgStat.Helpers (resolveReport)
+import OrgStat.Logging
 import OrgStat.Outputs.Types (ScriptParams (..))
 import OrgStat.Util (timeF)
 import OrgStat.WorkMonad (WorkM, wcConfig)
@@ -31,6 +32,7 @@ processScriptOutput ScriptParams{..} = do
     -- Set env variables
     prevVars <- forM allReports $ \(toString -> reportName,org) -> do
         let duration = timeF $ orgTotalDuration $ filterHasClock org
+        logDebug $ "Variable " <> show reportName <> " duration is " <> show duration
         (prevVar :: Maybe String) <- liftIO $ lookupEnv reportName
         liftIO $ setEnv reportName (toString duration)
         pure $ (reportName,) <$> prevVar
@@ -40,7 +42,8 @@ processScriptOutput ScriptParams{..} = do
     -- Execute script
     let cmdArgument = either id (\t -> "-c \"" <> toString t <> "\"") spScript
     liftIO $ callCommand $
-        "sh " <> cmdArgument
+        spInterpreter <> " " <> cmdArgument
+        --"/bin/env sh " <> cmdArgument
 
     -- Restore the old variables, clean new.
     forM_ (map fst allReports) $ \(toString -> reportName) -> do
