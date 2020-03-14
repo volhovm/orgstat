@@ -16,10 +16,10 @@ import qualified Data.Text.IO as TIO
 import Data.Yaml (decodeEither')
 import System.Directory (doesFileExist)
 import System.FilePath (takeBaseName, takeExtension)
-import Turtle (ExitCode (..), procStrict)
+import Turtle (ExitCode(..), procStrict)
 
 import OrgStat.Ast (Org)
-import OrgStat.Config (ConfigException (ConfigParseException), OrgStatConfig)
+import OrgStat.Config (ConfigException(ConfigParseException), OrgStatConfig)
 import OrgStat.Logging
 import OrgStat.Parser (runParser)
 import OrgStat.Util (dropEnd)

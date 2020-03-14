@@ -7,16 +7,17 @@ import Data.Colour.SRGB (sRGB24show)
 import qualified Data.List as L
 import qualified Data.Text as T
 import Data.Text.Arbitrary ()
-import Data.Time (LocalTime (..), TimeOfDay (..), getZonedTime, zonedTimeToLocalTime)
+import Data.Time (LocalTime(..), TimeOfDay(..), getZonedTime, zonedTimeToLocalTime)
 import Data.Time.Calendar (addGregorianMonthsClip, fromGregorian)
 import Test.Hspec (Spec, describe, runIO)
 import Test.Hspec.QuickCheck (prop)
-import Test.QuickCheck (Arbitrary (arbitrary), Gen, NonNegative (..), Positive (..), Small (..),
-                        choose, forAll, ioProperty, oneof, (.&&.), (===), (==>))
+import Test.QuickCheck
+  (Arbitrary(arbitrary), Gen, NonNegative(..), Positive(..), Small(..), choose, forAll, ioProperty,
+  oneof, (.&&.), (===), (==>))
 import Universum
 
-import OrgStat.Ast (Clock (..), Org (..), atDepth, mergeClocks, orgClocks)
-import OrgStat.Config (ConfDate (..), ConfRange (..))
+import OrgStat.Ast (Clock(..), Org(..), atDepth, mergeClocks, orgClocks)
+import OrgStat.Config (ConfDate(..), ConfRange(..))
 import OrgStat.Helpers (convertRange)
 import OrgStat.Util (addLocalTime, parseColour)
 
@@ -43,7 +44,8 @@ instance Arbitrary LocalTime where
 
 instance Arbitrary Clock where
     arbitrary = do
-        [a,b] <- replicateM 2 arbitrary
+        a <- arbitrary
+        b <- arbitrary
         pure . (uncurry Clock) $ if a < b then (a,b) else (b,a)
 
 genOrgDepth :: Int -> Gen Org

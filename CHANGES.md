@@ -1,3 +1,7 @@
+0.1.8
+==========
+* Switched to ghc 8.8
+
 0.1.7
 ==========
 * Switch "script" output interpreter from "sh" to "/bin/env sh".

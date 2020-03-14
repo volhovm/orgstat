@@ -1,6 +1,4 @@
-{-# LANGUAGE RecordWildCards  #-}
-{-# LANGUAGE TemplateHaskell  #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE RecordWildCards, TemplateHaskell, TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 -- | Configuration file types, together with json instances.
@@ -16,17 +14,16 @@ module OrgStat.Config
        , OrgStatConfig (..)
        ) where
 
-import Data.Aeson (FromJSON (..), Value (Object, String), withObject, withText, (.!=), (.:), (.:?))
+import Data.Aeson (FromJSON(..), Value(Object, String), withObject, withText, (.!=), (.:), (.:?))
 import Data.Aeson.Types (typeMismatch)
-import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Text as T
 import Data.Time (LocalTime)
 import Data.Time.Format (defaultTimeLocale, parseTimeM)
 import Universum
 
-import OrgStat.Outputs.Types (BlockParams (..), ScriptParams (..), SummaryParams (..),
-                              TimelineParams (..))
-import OrgStat.Scope (AstPath (..), ScopeModifier (..))
+import OrgStat.Outputs.Types
+  (BlockParams(..), ScriptParams(..), SummaryParams(..), TimelineParams(..))
+import OrgStat.Scope (AstPath(..), ScopeModifier(..))
 import OrgStat.Util (parseColour)
 
 -- | Exception type for everything bad that happens with config,

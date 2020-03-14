@@ -1,6 +1,4 @@
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE RankNTypes, ScopedTypeVariables, TemplateHaskell #-}
 
 -- | Timeline reporting output. Prouces a svg with columns.
 
@@ -11,16 +9,17 @@ module OrgStat.Outputs.Timeline
 import Data.Colour.CIE (luminance)
 import Data.List (lookup, nub)
 import qualified Data.Text as T
-import Data.Time (Day, DiffTime, LocalTime (..), defaultTimeLocale, formatTime, timeOfDayToTime)
+import Data.Time (Day, DiffTime, LocalTime(..), defaultTimeLocale, formatTime, timeOfDayToTime)
 import Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude as D
 import qualified Prelude
 import Text.Printf (printf)
 import Universum
 
-import OrgStat.Ast (Clock (..), Org (..), orgClocks, traverseTree)
-import OrgStat.Outputs.Types (TimelineOutput (..), TimelineParams, tpBackground, tpColorSalt,
-                              tpColumnHeight, tpColumnWidth, tpLegend, tpTopDay)
+import OrgStat.Ast (Clock(..), Org(..), orgClocks, traverseTree)
+import OrgStat.Outputs.Types
+  (TimelineOutput(..), TimelineParams, tpBackground, tpColorSalt, tpColumnHeight, tpColumnWidth,
+  tpLegend, tpTopDay)
 import OrgStat.Util (addLocalTime, hashColour)
 
 

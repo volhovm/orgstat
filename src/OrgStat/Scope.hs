@@ -1,7 +1,4 @@
-{-# LANGUAGE DeriveGeneric       #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE DeriveGeneric, RankNTypes, ScopedTypeVariables, TemplateHaskell #-}
 
 -- | This module defines how report input is formed.
 

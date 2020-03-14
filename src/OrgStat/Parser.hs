@@ -8,23 +8,21 @@ module OrgStat.Parser
 
 import Universum
 
-import Control.Exception (Exception)
 import qualified Data.Attoparsec.Text as A
 import Data.Char (isSpace)
 import qualified Data.OrgMode.Parse as O
 import qualified Data.OrgMode.Types as O
 import qualified Data.Text as T
-import Data.Time (LocalTime (..), TimeOfDay (..), fromGregorian, getZonedTime, zonedTimeToLocalTime)
+import Data.Time (LocalTime(..), TimeOfDay(..), fromGregorian, getZonedTime, zonedTimeToLocalTime)
 import Data.Time.Calendar ()
 
-import OrgStat.Ast (Clock (..), Org (..), orgTags, traverseTree)
+import OrgStat.Ast (Clock(..), Org(..), orgTags, traverseTree)
 
 ----------------------------------------------------------------------------
 -- Exceptions
 ----------------------------------------------------------------------------
 
-data ParsingException =
-    ParsingException Text
+data ParsingException = ParsingException Text
     deriving (Show, Typeable)
 
 instance Exception ParsingException

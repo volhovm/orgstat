@@ -12,7 +12,7 @@ import qualified Data.Attoparsec.ByteString.Char8 as A
 import OrgStat.Ast (filterHasClock, orgTotalDuration)
 import OrgStat.Config (confReports, crName)
 import OrgStat.Helpers (resolveReport)
-import OrgStat.Outputs.Types (SummaryOutput (..), SummaryParams (..))
+import OrgStat.Outputs.Types (SummaryOutput(..), SummaryParams(..))
 import OrgStat.Util (timeF)
 import OrgStat.WorkMonad (WorkM, wcConfig)
 

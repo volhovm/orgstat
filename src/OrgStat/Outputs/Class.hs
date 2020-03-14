@@ -11,7 +11,7 @@ import qualified Diagrams.Backend.SVG as DB
 import qualified Diagrams.Prelude as D
 import System.FilePath (replaceExtension)
 
-import OrgStat.Outputs.Types (BlockOutput (..), SummaryOutput (..), TimelineOutput (..))
+import OrgStat.Outputs.Types (BlockOutput(..), SummaryOutput(..), TimelineOutput(..))
 
 -- | Things that reporters output an what we can do with them.
 class ReportOutput a where

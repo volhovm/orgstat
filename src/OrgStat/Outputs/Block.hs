@@ -12,7 +12,7 @@ import qualified Data.Text as T
 import Text.PrettyPrint.Boxes (center1, hsep, left, render, right, text, vcat)
 
 import OrgStat.Ast (Org, filterHasClock, orgSubtrees, orgTitle, orgTotalDuration)
-import OrgStat.Outputs.Types (BlockOutput (..), BlockParams (..))
+import OrgStat.Outputs.Types (BlockOutput(..), BlockParams(..))
 import OrgStat.Util (dropEnd, timeF)
 
 data BlockFrames = BlockFrames

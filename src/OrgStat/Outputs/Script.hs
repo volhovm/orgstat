@@ -16,7 +16,7 @@ import OrgStat.Ast (filterHasClock, orgTotalDuration)
 import OrgStat.Config (confReports, crName)
 import OrgStat.Helpers (resolveReport)
 import OrgStat.Logging
-import OrgStat.Outputs.Types (ScriptParams (..))
+import OrgStat.Outputs.Types (ScriptParams(..))
 import OrgStat.Util (timeF)
 import OrgStat.WorkMonad (WorkM, wcConfig)
 

@@ -1,5 +1,4 @@
-{-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RankNTypes, TemplateHaskell #-}
 -- | Types common among reports.
 
 module OrgStat.Outputs.Types
@@ -23,13 +22,13 @@ module OrgStat.Outputs.Types
        , BlockOutput (..)
        ) where
 
-import           Universum
+import Universum
 
-import           Control.Lens         (makeLenses)
+import Control.Lens (makeLenses)
 
-import           Data.Default         (Default (..))
-import           Diagrams.Backend.SVG (B)
-import qualified Diagrams.Prelude     as D
+import Data.Default (Default(..))
+import Diagrams.Backend.SVG (B)
+import qualified Diagrams.Prelude as D
 
 ----------------------------------------------------------------------------
 -- Timeline

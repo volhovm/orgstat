@@ -15,12 +15,12 @@ import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>))
 import Turtle (shell)
 
-import OrgStat.CLI (CommonArgs (..))
-import OrgStat.Config (ConfOutput (..), ConfOutputType (..), OrgStatConfig (..))
+import OrgStat.CLI (CommonArgs(..))
+import OrgStat.Config (ConfOutput(..), ConfOutputType(..), OrgStatConfig(..))
 import OrgStat.Helpers (resolveOutput, resolveReport)
 import OrgStat.Logging (logDebug, logInfo)
-import OrgStat.Outputs (genBlockOutput, genSummaryOutput, processScriptOutput, processTimeline,
-                        writeReport)
+import OrgStat.Outputs
+  (genBlockOutput, genSummaryOutput, processScriptOutput, processTimeline, writeReport)
 import OrgStat.WorkMonad (WorkM, wcCommonArgs, wcConfig)
 
 -- | Main application logic.

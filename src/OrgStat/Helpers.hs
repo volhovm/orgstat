@@ -12,14 +12,15 @@ import Universum
 
 import Control.Lens (at, views, (.=))
 import qualified Data.List.NonEmpty as NE
-import Data.Time (LocalTime (..), TimeOfDay (..), addDays, getZonedTime, toGregorian,
-                  zonedTimeToLocalTime)
+import Data.Time
+  (LocalTime(..), TimeOfDay(..), addDays, getZonedTime, toGregorian, zonedTimeToLocalTime)
 import Data.Time.Calendar (addGregorianMonthsRollOver)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 
-import OrgStat.Ast (Org (..), cutFromTo, mergeClocks, orgTitle)
-import OrgStat.Config (ConfDate (..), ConfOutput (..), ConfRange (..), ConfReport (..),
-                       ConfScope (..), ConfigException (..), OrgStatConfig (..))
+import OrgStat.Ast (Org(..), cutFromTo, mergeClocks, orgTitle)
+import OrgStat.Config
+  (ConfDate(..), ConfOutput(..), ConfRange(..), ConfReport(..), ConfScope(..), ConfigException(..),
+  OrgStatConfig(..))
 import OrgStat.IO (readOrgFile)
 import OrgStat.Scope (applyModifiers)
 import OrgStat.WorkMonad (WorkM, wcConfig, wdReadFiles, wdResolvedReports, wdResolvedScopes)

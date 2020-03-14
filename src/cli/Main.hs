@@ -1,22 +1,21 @@
-{-# LANGUAGE ApplicativeDo       #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ApplicativeDo, ScopedTypeVariables #-}
 
 module Main where
 
 import Universum
 
 import Data.Version (showVersion)
-import Options.Applicative.Simple (Parser, help, long, metavar, simpleOptions, strOption, switch,
-                                   value)
+import Options.Applicative.Simple
+  (Parser, help, long, metavar, simpleOptions, strOption, switch, value)
 import Paths_orgstat (version)
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))
 
 import OrgStat.CLI (CommonArgs, parseCommonArgs)
 import OrgStat.IO (readConfig)
-import OrgStat.Logging (Severity (..), initLogging, logDebug, logError)
+import OrgStat.Logging (Severity(..), initLogging, logDebug, logError)
 import OrgStat.Logic (runOrgStat)
-import OrgStat.WorkMonad (WorkConfig (..), runWorkM)
+import OrgStat.WorkMonad (WorkConfig(..), runWorkM)
 
 data Args = Args
     { configPath :: !FilePath

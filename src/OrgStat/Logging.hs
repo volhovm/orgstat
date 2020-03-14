@@ -18,11 +18,12 @@ import Universum
 
 import Control.Concurrent.MVar (modifyMVar_, withMVar)
 import qualified Data.Text as T
-import Data.Time.Clock (UTCTime (..), getCurrentTime)
+import Data.Time.Clock (UTCTime(..), getCurrentTime)
 import Fmt (fmt, padRightF, (+|), (|+), (|++|))
 import Fmt.Time (dateDashF, hmsF, subsecondF, tzNameF)
-import System.Console.ANSI (Color (Blue, Green, Magenta, Red, Yellow), ColorIntensity (Vivid),
-                            ConsoleLayer (Foreground), SGR (Reset, SetColor), setSGRCode)
+import System.Console.ANSI
+  (Color(Blue, Green, Magenta, Red, Yellow), ColorIntensity(Vivid), ConsoleLayer(Foreground),
+  SGR(Reset, SetColor), setSGRCode)
 import System.IO.Unsafe (unsafePerformIO)
 
 

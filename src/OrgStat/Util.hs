@@ -18,11 +18,10 @@ import Data.Aeson.Types (Options, fieldLabelModifier)
 import Data.Char (isLower, toLower)
 import Data.Colour (Colour)
 import Data.Colour.CIE (luminance)
-import Data.Colour.SRGB (RGB (..), sRGB24, toSRGBBounded)
-import Data.Hashable (hashWithSalt)
+import Data.Colour.SRGB (RGB(..), sRGB24, toSRGBBounded)
 import Data.List (nub)
 import Data.List ((!!))
-import Data.Time (LocalTime (..), NominalDiffTime, addUTCTime, localTimeToUTC, utc, utcToLocalTime)
+import Data.Time (LocalTime(..), NominalDiffTime, addUTCTime, localTimeToUTC, utc, utcToLocalTime)
 import Universum
 
 -- | JSON/Yaml TH modifier. Each field of type "aoeuKek" turns into

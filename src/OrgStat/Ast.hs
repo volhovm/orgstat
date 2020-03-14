@@ -1,5 +1,4 @@
-{-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RankNTypes, TemplateHaskell #-}
 
 -- | Abstract syntax tree for org.
 
@@ -22,7 +21,7 @@ module OrgStat.Ast
        ) where
 
 import Control.Lens (ASetter', makeLenses)
-import Data.Time (LocalTime, NominalDiffTime, diffUTCTime, localTimeToUTC, localTimeToUTC, utc)
+import Data.Time (LocalTime, NominalDiffTime, diffUTCTime, localTimeToUTC, utc)
 
 import Universum
 

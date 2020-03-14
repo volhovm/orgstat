@@ -17,7 +17,7 @@ module OrgStat.WorkMonad
 import Universum
 
 import Control.Lens (makeLenses)
-import Data.Default (Default (def))
+import Data.Default (Default(def))
 
 import OrgStat.Ast (Org)
 import OrgStat.CLI (CommonArgs)
