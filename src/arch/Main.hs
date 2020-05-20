@@ -5,6 +5,7 @@ module Main where
 import Universum
 
 import qualified Data.Attoparsec.Text as A
+import Data.Char (isSpace)
 import qualified Data.HashMap.Strict as HM
 import qualified Data.List as L
 import qualified Data.OrgMode.Parse as O
@@ -91,7 +92,6 @@ data LogicException = LogicException Text
 instance Exception LogicException
 
 
-
 -- | Analogous to readOrgFile from OrgStat.IO, but with original
 -- orgmode-parse datatype.
 readOrgFile
@@ -102,10 +102,9 @@ readOrgFile todoKeywords fp = do
     unlessM (liftIO $ doesFileExist fp) $
         throwM $ LogicException $ "Org file " <> fpt <> " doesn't exist"
     (content, fname) <- case takeExtension fp of
-        ".gpg" -> (,dropEnd 4 fp) <$> decryptGpg
         ".org" -> (,fp) <$> liftIO (TIO.readFile fp)
         _ -> throwM $ LogicException $
-            "File " <> fpt <> " has unknown extension. Need to be .org or .org.gpg"
+            "File " <> fpt <> " has unknown extension. Need to be .org"
     let filename = T.pack $ takeBaseName fname
     logDebug $ "Parsing org file " <> fpt
     parsed <-
@@ -116,17 +115,6 @@ readOrgFile todoKeywords fp = do
     pure (filename, parsed)
   where
     fpt = T.pack fp
-    failExternal = throwM . LogicException
-    decryptGpg = do
-        logDebug $ "Decrypting gpg file: " <> fpt
-        (exCode, output) <-
-            (procStrict "gpg" ["--quiet", "--decrypt", fpt] empty)
-            `catch`
-            (\(e :: LogicException) -> failExternal $ "gpg procStrict failed: " <> show e)
-        case exCode of
-            ExitSuccess   -> pass
-            ExitFailure n -> failExternal $ "Gpg failed with code " <> show n
-        pure output
 
 -- Nothing for DateTime without time-of-day
 convertDateTime :: O.DateTime -> Maybe LocalTime
@@ -145,6 +133,8 @@ printDocument :: Document -> Text
 printDocument Document{..} =
     documentText <> "\n" <> T.intercalate "\n" (map printHeadline documentHeadlines)
   where
+    prependSpace prefix s = if T.null s then "" else prefix <> s
+
     printStats (StatsPct i) = " [" <> show i <> "%]"
     printStats (StatsOf i j) = " [" <> show i <> "/" <> show j <> "]"
 
@@ -156,22 +146,27 @@ printDocument Document{..} =
                 maybe "" (\s -> " " <> unStateKeyword s) stateKeyword <>
                 maybe "" (\p -> " [#" <> show p <> "]") priority <>
                 maybe "" printStats  stats <>
-                (if T.null title then "" else " " <> title)
+                (prependSpace " " title)
         in
         let tagList = if null tags then "" else ":" <> T.intercalate ":" tags <> ":" in
         let spaceLen = 77 - T.length prefix - T.length tagList in
-        let header = prefix <> fromString (take spaceLen (Universum.repeat ' ')) <> tagList in
+        let header = prefix <>
+                prependSpace (fromString (take spaceLen (Universum.repeat ' '))) tagList in
 
         let sec = printSection d section in
 
-        header <> (if T.null sec then "" else "\n" <> sec)
+        let subHeadlinesStr = map printHeadline subHeadlines in
+
+        header <> (prependSpace "\n" sec) <>
+                  (if all T.null subHeadlinesStr
+                   then "" else "\n" <> T.intercalate "\n" subHeadlinesStr)
 
     printSection :: Int -> Section -> Text
     printSection depth Section{..} =
-        let indent = fromString (take depth (Universum.repeat ' ')) in
+        let indent = fromString (take (depth+1) (Universum.repeat ' ')) in
         let Plns plns = sectionPlannings in
         let planningsStr =
-                T.intercalate " " $ map (\(k,v) -> show k <> " " <> printTs v) $
+                T.intercalate " " $ map (\(k,v) -> show k <> ": " <> printTs v) $
                 HM.toList plns in
         let clocksStr = map printClock sectionClocks in
         let withDrawer name xs = [":" <> name <> ":"] <> xs <> [":END:"] in
@@ -183,15 +178,23 @@ printDocument Document{..} =
         let logbook = unLogbook sectionLogbook in
         let logbookStr = if logbook == [] then [] else
                          withDrawer "LOGBOOK" $ map printClock logbook in
-        let drawersStr = concatMap (\(Drawer name contents) -> withDrawer name [contents]) sectionDrawers in
-        T.intercalate ("\n" <> indent) $
-          concat [[planningsStr], clocksStr, propsStr, logbookStr, drawersStr, [sectionParagraph]]
+        let drawersStr =
+                concatMap (\(Drawer name contents) -> withDrawer name [contents]) sectionDrawers in
+
+        let maybeInclude s = if T.null s then [] else [s] in
+        prependSpace indent $
+          T.intercalate ("\n" <> indent)
+          (concat [ maybeInclude planningsStr
+                  , clocksStr, propsStr
+                  , logbookStr, drawersStr])
+                  <> T.stripEnd sectionParagraph
 
     printClock :: Clock -> Text
     printClock (Clock (Just ts, Just (h,m))) =
         let withSpace s = if T.length s == 1 then " " <> s else s in
         let withZero s = if T.length s == 1 then "0" <> s else s in
         "CLOCK: " <> printTs ts <> " => " <> withSpace (show h) <> ":" <> withZero (show m)
+    printClock (Clock (Just ts, Nothing)) = "CLOCK: " <> printTs ts
     printClock c = error $ "printClock: not yet implemented " <> show c
 
     printTs :: Timestamp -> Text
@@ -234,56 +237,60 @@ printDocument Document{..} =
             show delayValue <>
             printTimeUnit delayUnit
 
-
+-- TODO: repeated common tasks?
 filterOrg :: [Text] -> LocalTime -> O.Document -> (O.Document, O.Document)
 filterOrg doneKeywords archDate Document{..} =
     let hlUpd = map go documentHeadlines in
-    (Document { documentHeadlines = map (view _1) hlUpd, ..},
-     Document { documentHeadlines = map (view _2) hlUpd, ..})
+    (Document { documentHeadlines = mapMaybe fst hlUpd, ..},
+     Document { documentHeadlines = mapMaybe snd hlUpd, ..})
   where
     tsOlder :: Timestamp -> Bool
     tsOlder ts = case convertDateTime (tsTime ts) of
         Nothing -> False
         Just locTime -> locTime <= archDate
 
-    go :: Headline -> (Headline,Headline,Bool)
+    go :: Headline -> (Maybe Headline,Maybe Headline)
     go hl@Headline{..} =
-        let subHls = map go subHeadlines in
-        -- Whether this headline was CLOSED before archive date
-        let toArchive =
-                (let isDone = stateKeyword `elem` (map (Just . StateKeyword) doneKeywords) in
-                 let Plns plannings = sectionPlannings section in
-                 let closedOld = case HM.lookup CLOSED plannings of
-                                   Nothing -> True
-                                   Just ts -> tsOlder ts in
-                 isDone && closedOld) in
+         let subHls = map go subHeadlines in
+         -- Whether this headline was CLOSED before archive date
+         let isDone = stateKeyword `elem` (map (Just . StateKeyword) doneKeywords) in
+         let Plns plannings = sectionPlannings section in
+         let isRepeating = case HM.lookup SCHEDULED plannings of
+               Nothing -> False
+               Just ts -> isJust (repeater (tsTime ts)) in
+         let closedOld = case HM.lookup CLOSED plannings of
+               Nothing -> True
+               Just ts -> tsOlder ts in
 
-         if toArchive && and (map (view _3) subHls)
-         then (hl, hl, True)
-         else
+         if isRepeating || stateKeyword == Nothing
+         then
            let clocks =
-                   concatMap (\case Clock (Just x, Just y) -> [(x,y)]
-                                    _ -> []) $
+                   reverse $
+                   L.sortOn (maybe (error "Couldn't convert datetime to sort") id .
+                             convertDateTime . tsTime . fst) $
+                   map (\case Clock (Just x, y) -> (x,y)
+                              c -> error $ "Have encountered a broken clock: " <> show c) $
                    L.nub $
                    concat [ sectionClocks section
                           , unLogbook (sectionLogbook section)
                           ] in
            let (splitArch, splitRemain) = L.partition (tsOlder . fst) clocks in
 
-           let toClock (a, b) = Clock (Just a, Just b) in
+           let toClock (a, b) = Clock (Just a, b) in
 
-           let removeItem = and (map (view _3) subHls) && splitRemain == [] in
+           let remainItem = all (isNothing . snd) subHls && splitArch == [] in
            let hlLeft =
                    hl { section = section { sectionClocks = []
                                           , sectionLogbook = Logbook (map toClock splitRemain)}
-                      , subHeadlines = concatMap (\(l,_r,b) -> if b then [] else [l]) subHls } in
+                      , subHeadlines = mapMaybe fst subHls } in
 
            let hlRight =
                    hl { section = section { sectionClocks = []
                                           , sectionLogbook = Logbook (map toClock splitArch)}
-                      , subHeadlines = map (view _2) subHls } in
+                      , subHeadlines = mapMaybe snd subHls } in
 
-           (hlLeft,hlRight,removeItem)
+           (Just hlLeft,if remainItem then Nothing else Just hlRight)
+         else (if isDone && closedOld then (Nothing, Just hl) else (Just hl, Nothing))
 
 
 main :: IO ()
@@ -300,7 +307,7 @@ main = do
     let filteredFiles = map (second $ filterOrg argsDoneKeywords argsDate) orgFiles
 
     forM_ filteredFiles $ \(fn,(remain,arch)) -> do
-        TIO.writeFile (argsOutDir </> ("remain_" <> toString fn)) $ printDocument remain
-        TIO.writeFile (argsOutDir </> ("archive_" <> toString fn)) $ printDocument arch
+        TIO.writeFile (argsOutDir </> (toString fn <> "_remain.org" )) $ printDocument remain
+        TIO.writeFile (argsOutDir </> (toString fn <> "_archive.org")) $ printDocument arch
 
-    logInfo "mda"
+    logInfo "Done"
