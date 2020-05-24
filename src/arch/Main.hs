@@ -5,7 +5,6 @@ module Main where
 import Universum
 
 import qualified Data.Attoparsec.Text as A
-import Data.Char (isSpace)
 import qualified Data.HashMap.Strict as HM
 import qualified Data.List as L
 import qualified Data.OrgMode.Parse as O
@@ -13,24 +12,17 @@ import Data.OrgMode.Types
 import qualified Data.OrgMode.Types as O
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import Data.Time
-  (LocalTime(..), NominalDiffTime, TimeOfDay(..), diffUTCTime, fromGregorian, localTimeToUTC, utc)
+import Data.Time (LocalTime(..), TimeOfDay(..), fromGregorian)
 import Data.Time.Format (defaultTimeLocale, parseTimeM)
 import Data.Version (showVersion)
 import Options.Applicative.Simple
-  (Parser, ReadM, help, long, maybeReader, metavar, option, simpleOptions, strOption, switch,
-  value)
+  (Parser, ReadM, help, long, maybeReader, metavar, option, simpleOptions, strOption, switch)
 import Paths_orgstat (version)
 import System.Directory (doesFileExist)
 import System.FilePath (takeBaseName, takeExtension)
 import System.FilePath ((</>))
-import Turtle (ExitCode(..), procStrict)
 
-import OrgStat.CLI (CommonArgs, parseCommonArgs)
-import OrgStat.Logging (Severity(..), initLogging, logDebug, logError, logInfo)
-import OrgStat.Logic (runOrgStat)
-import OrgStat.Util (dropEnd)
-import OrgStat.WorkMonad (WorkConfig(..), runWorkM)
+import OrgStat.Logging
 
 ----------------------------------------------------------------------------
 -- Arguments/options

@@ -12,6 +12,9 @@ module OrgStat.Ast
 
        , clockDuration
        , orgTotalDuration
+       , orgMeanDuration
+       , orgMedianDuration
+       , orgPomodoroNum
        , filterHasClock
        , cutFromTo
        , fmapOrgLens
@@ -21,6 +24,7 @@ module OrgStat.Ast
        ) where
 
 import Control.Lens (ASetter', makeLenses)
+import Data.List ((!!))
 import Data.Time (LocalTime, NominalDiffTime, diffUTCTime, localTimeToUTC, utc)
 
 import Universum
@@ -54,14 +58,52 @@ makeLenses ''Org
 -- Helpers and lenses
 ----------------------------------------------------------------------------
 
+-- | Merge adjacent clocks from the list into one, return sorted list.
+glueAdjacent :: [Clock] -> [Clock]
+glueAdjacent clocks = go (sort clocks)
+  where
+    go [] = []
+    go [x] = [x]
+    go (a:b:xs) = if cTo a >= cFrom b then go (Clock (cFrom a) (cTo b) : xs)
+                                      else a : go (b:xs)
+
+-- | Duration of the clock
 clockDuration :: Clock -> NominalDiffTime
 clockDuration (Clock (localTimeToUTC utc -> from) (localTimeToUTC utc -> to)) =
     diffUTCTime to from
 
+-- | All durations of a single org file
+orgDurations :: Org -> [NominalDiffTime]
+orgDurations org =
+    map clockDuration $ glueAdjacent $ concat $ org ^.. traverseTree . orgClocks
+
 -- | Calculate total clocks duration in org tree.
 orgTotalDuration :: Org -> NominalDiffTime
-orgTotalDuration org =
-    sum $ map clockDuration $ concat $ org ^.. traverseTree . orgClocks
+orgTotalDuration = sum . orgDurations
+
+-- | Calculate mean duration of clocks in the given org tree.
+orgMeanDuration :: Org -> NominalDiffTime
+orgMeanDuration = mean . orgDurations
+  where
+    mean [] = 0
+    mean xs = sum xs / fromIntegral (length xs)
+
+-- | Calculate mean duration of clocks in the given org tree.
+orgMedianDuration :: Org -> NominalDiffTime
+orgMedianDuration = median . orgDurations
+  where
+    median [] = 0
+    median [a] = a
+    median xs = let sorted = sort xs in
+                let n = length xs in
+                if odd n then sorted !! (n `div` 2)
+                         else (sorted !! (n `div` 2 - 1) + sorted !! (n `div` 2)) / 2
+
+-- | Number of intervals \geq 25min. Intervals that are (25 * n + p)
+-- mins long with p < 25 count as n pomodoros.
+orgPomodoroNum :: Org -> Int
+orgPomodoroNum =
+    length . map (\dur -> truncate dur `div` (25 * 60 :: Int)) . orgDurations
 
 -- | Remove subtrees that have zero total duration.
 filterHasClock :: Org -> Org
