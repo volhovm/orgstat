@@ -11,6 +11,7 @@ module OrgStat.Ast
        , orgSubtrees
 
        , clockDuration
+       , orgDurations
        , orgTotalDuration
        , orgMeanDuration
        , orgMedianDuration
@@ -103,7 +104,7 @@ orgMedianDuration = median . orgDurations
 -- mins long with p < 25 count as n pomodoros.
 orgPomodoroNum :: Org -> Int
 orgPomodoroNum =
-    length . map (\dur -> truncate dur `div` (25 * 60 :: Int)) . orgDurations
+    sum . map (\dur -> truncate dur `div` (25 * 60 :: Int)) . orgDurations
 
 -- | Remove subtrees that have zero total duration.
 filterHasClock :: Org -> Org

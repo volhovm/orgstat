@@ -15,7 +15,6 @@ import System.Process (callCommand)
 import OrgStat.Ast
 import OrgStat.Config (confReports, crName)
 import OrgStat.Helpers (resolveReport)
-import OrgStat.Logging
 import OrgStat.Outputs.Types (ScriptParams(..))
 import OrgStat.Util (timeF)
 import OrgStat.WorkMonad (WorkM, wcConfig)
@@ -32,18 +31,17 @@ processScriptOutput ScriptParams{..} = do
     -- Set env variables
     prevVars <- forM allReports $ \(toString -> reportName,org) -> do
         let duration = timeF $ orgTotalDuration $ filterHasClock org
-        logDebug $ "Report " <> show reportName <> " duration is " <> show duration
         let mean = timeF $ orgMeanDuration $ filterHasClock org
-        logDebug $ "Report " <> show reportName <> " mean is " <> show mean
         let median = timeF $ orgMedianDuration $ filterHasClock org
-        logDebug $ "Report " <> show reportName <> " median is " <> show median
         let pomodoro = orgPomodoroNum $ filterHasClock org
-        logDebug $ "Report " <> show reportName <> " pomodoro is " <> show median
+        let toMinutes x = round x `div` 60
+        let durationsPyth :: [Int] = map toMinutes $ orgDurations $ filterHasClock org
         (prevVar :: Maybe String) <- liftIO $ lookupEnv reportName
         liftIO $ setEnv reportName (toString duration)
         liftIO $ setEnv (reportName <> "Mean") (toString mean)
         liftIO $ setEnv (reportName <> "Median") (toString median)
         liftIO $ setEnv (reportName <> "Pomodoro") (show pomodoro)
+        liftIO $ setEnv (reportName <> "DurationsList") (show durationsPyth)
         pure $ (reportName,) <$> prevVar
     let prevVarsMap :: Map String String
         prevVarsMap = M.fromList $ catMaybes prevVars
