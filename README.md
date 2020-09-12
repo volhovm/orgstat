@@ -1,20 +1,26 @@
+
 # orgstat
 
 [![Build Status](https://travis-ci.org/volhovm/orgstat.svg?branch=master)](https://travis-ci.org/volhovM/orgstat)
 [![Hackage status](https://img.shields.io/hackage/v/orgstat.svg)](http://hackage.haskell.org/package/orgstat)
 
-Orgstat is a statistics visualizer tool for org-mode. Given a set of org-mode files (gpg supported), 
+Orgstat is a statistics visualizer tool for org-mode. Given a set of org-mode files (gpg supported),
 it parses AST, applies modifications such as tag filtering, pruning or selecting a subtree (which yields a _report_) and generates _output_ using specified params. Currently supported output types are:
-* Timeline output: that's a svg image describing what took your time on every day of selected report range. 
+* Timeline output: that's a svg image describing what took your time on every day of selected report range.
 * Summary output: you specify the template string with `%reportName%` in it and it replaces each such occurrence with total hours spent on report. Useful for putting this info into your status bar.
 * Script output: a generalisation of the summary output. Selected reports' durations are set as ENV variables and then the user's script is run in this new environment.
 * Block output: that's what you'd expect from the default org report generator, though formatting is more similar to one that `tree` unix utility provides.
 
 ## Building/installing
 
-`orgstat` uses haskell build tool [stack](https://docs.haskellstack.org/en/stable/README/). In order to build the project, run `stack build` in the project directory. 
+`orgstat` uses haskell build tool [stack](https://docs.haskellstack.org/en/stable/README/). In order to build the project, run `stack build` in the project directory.
 
 Since `orgstat` is also available on hackage, you can use `cabal install orgstat` to get it. If you're using `nix` package manager you can find `orgstat` in `nixpkgs` as `haskellPackages.orgstat` since `nixpkgs` has effectively everything available on hackage directly.
+
+To install `orgstat` with `nix`:
+```
+nix-env -f "<nixpkgs>" -iA haskellPackages.orgstat
+```
 
 ## Running
 
