@@ -124,7 +124,8 @@ resolveReport reportName = use (wdResolvedReports . at reportName) >>= \case
         withModifiers <-
             either throwM pure $
             applyModifiers orgTop crModifiers
-        let finalOrg = cutFromTo fromto $ mergeClocks withModifiers
+        --let finalOrg = cutFromTo fromto $ mergeClocks withModifiers
+        let finalOrg = cutFromTo fromto withModifiers
         wdResolvedReports . at reportName .= Just finalOrg
         pure finalOrg
 

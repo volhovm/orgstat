@@ -151,6 +151,12 @@ atDepth 0 f o = f o
 atDepth n f o =
     (\x -> o & orgSubtrees .~ x) <$> traverse (atDepth (n-1) f) (o ^. orgSubtrees)
 
+-- TODO This should consider the following situation:
+-- Task A: 00:03 - 00:10
+-- Task B: 00:10 - 00:11
+-- Task A: 00:11 - 00:12
+--
+-- It will merge A, and thus A will interlap with B, which is undesirable.
 -- | Merges task clocks that have less then 2m delta between them into
 -- one.
 mergeClocks :: Org -> Org

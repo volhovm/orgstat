@@ -15,6 +15,7 @@ import System.Process (callCommand)
 import OrgStat.Ast
 import OrgStat.Config (confReports, crName)
 import OrgStat.Helpers (resolveReport)
+import OrgStat.Logging
 import OrgStat.Outputs.Types (ScriptParams(..))
 import OrgStat.Util (timeF)
 import OrgStat.WorkMonad (WorkM, wcConfig)
@@ -35,6 +36,9 @@ processScriptOutput ScriptParams{..} = do
         let median = timeF $ orgMedianDuration $ filterHasClock org
         let pomodoro = orgPomodoroNum $ filterHasClock org
         let toMinutes x = round x `div` 60
+--        logWarning $ "1: " <> show org
+--        logWarning $ "2: " <> show (filterHasClock org)
+--        logWarning $ "3: " <> show (orgDurations $ filterHasClock org)
         let durationsPyth :: [Int] = map toMinutes $ orgDurations $ filterHasClock org
         (prevVar :: Maybe String) <- liftIO $ lookupEnv reportName
         liftIO $ setEnv reportName (toString duration)
