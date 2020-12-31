@@ -1,3 +1,10 @@
+0.1.9
+==========
+* Introduced passing the list of report durations into the script type output.
+* Added a simple archiving tool.
+* Fixed a small bug with `mergeClocks` which was causing multiple irrelevant tasks to inter-merge improperly.
+* Improved README.
+
 0.1.8
 ==========
 * Switched to ghc 8.8
