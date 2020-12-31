@@ -96,7 +96,7 @@ executable orgstat
                        RecordWildCards
                        TypeApplications
 
-executable orgarch
+executable orgstatarch
   main-is:             Main.hs
   other-modules:       Paths_orgstat
   build-depends:       base
