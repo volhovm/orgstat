@@ -15,7 +15,6 @@ import System.Process (callCommand)
 import OrgStat.Ast
 import OrgStat.Config (confReports, crName)
 import OrgStat.Helpers (resolveReport)
-import OrgStat.Logging
 import OrgStat.Outputs.Types (ScriptParams(..))
 import OrgStat.Util (timeF)
 import OrgStat.WorkMonad (WorkM, wcConfig)

@@ -17,7 +17,7 @@ import Data.Time
 import Data.Time.Calendar (addGregorianMonthsRollOver)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 
-import OrgStat.Ast (Org(..), cutFromTo, mergeClocks, orgTitle)
+import OrgStat.Ast (Org(..), cutFromTo, orgTitle)
 import OrgStat.Config
   (ConfDate(..), ConfOutput(..), ConfRange(..), ConfReport(..), ConfScope(..), ConfigException(..),
   OrgStatConfig(..))
