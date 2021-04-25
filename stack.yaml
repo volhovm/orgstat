@@ -1,4 +1,5 @@
 resolver: lts-15.2
+#resolver: nightly-2020-12-14
 
 nix:
   shell-file: shell.nix

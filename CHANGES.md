@@ -1,3 +1,7 @@
+0.1.10
+==========
+* Compatibility with base-4.14
+
 0.1.9
 ==========
 * Introduced passing the list of report durations into the script type output.

@@ -1,5 +1,6 @@
 with import <nixpkgs> { };
 haskell.lib.buildStackProject {
+   #ghc = haskell.packages.ghc8102.ghc;
    ghc = haskell.packages.ghc882.ghc;
    name = "orgstat";
    # firefox for xdg-open

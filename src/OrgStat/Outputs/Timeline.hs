@@ -8,6 +8,7 @@ module OrgStat.Outputs.Timeline
 
 import Data.Colour.CIE (luminance)
 import Data.List (lookup, nub)
+import qualified Data.List as L
 import qualified Data.Text as T
 import Data.Time (Day, DiffTime, LocalTime(..), defaultTimeLocale, formatTime, timeOfDayToTime)
 import Diagrams.Backend.SVG (B)
@@ -214,8 +215,23 @@ taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd label
       where
         (hours, minutes) = diffTimeMinutes time `divMod` 60
 
+emptyReport :: D.Diagram B
+emptyReport =
+      mconcat
+      [ D.strutY 20
+      , D.strutX 40
+      , D.alignedText 0.5 0 "empty"
+        & D.font "DejaVu Sans"
+        & D.fontSize 8
+      ]
+
 timelineReport :: TimelineParams -> Org -> TimelineOutput
-timelineReport params org = TimelineOutput pic
+timelineReport params org =
+    if (null $ concat $ org ^.. traverseTree . orgClocks)
+    then
+      TimelineOutput $ D.vsep 30 [emptyReport]
+
+    else TimelineOutput pic
   where
     lookupDef :: Eq a => b -> a -> [(a, b)] -> b
     lookupDef d a xs = fromMaybe d $ lookup a xs
@@ -223,7 +239,7 @@ timelineReport params org = TimelineOutput pic
     -- These two should be taken from the Org itself (min/max).
     (from,to) =
         let c = concat $ org ^.. traverseTree . orgClocks
-        in (minimum (map cFrom c), maximum (map cTo c))
+        in (L.minimum (map cFrom c), L.maximum (map cTo c))
 
     -- period to show. Right border is -1min, we assume it's non-inclusive
     daysToShow = [localDay from ..
