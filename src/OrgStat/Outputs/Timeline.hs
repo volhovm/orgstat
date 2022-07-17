@@ -172,7 +172,7 @@ timelineDay params day clocks =
                & D.fontSize 10
                & D.fc (contrastFrom bgboxColour)
                & D.moveTo (D.p2 (5, -h/2))
-        box = mconcat $ bool [] [label'] (fitLabelHeight params 12 h) ++ [bgbox]
+        box = mconcat $ bool [] [label'] (fitLabelHeight params 11 h) ++ [bgbox]
       in box & D.moveTo (D.p2 (0, -y))
 
 -- timelines for several days, with top lists
