@@ -11,7 +11,7 @@ import qualified Data.List as L
 import qualified Data.Text as T
 import Text.PrettyPrint.Boxes (center1, hsep, left, render, right, text, vcat)
 
-import OrgStat.Ast (Org, filterHasClock, orgSubtrees, orgTitle, orgTotalDuration)
+import OrgStat.Ast (Org, filterHasClock, orgSubtrees, orgTitle, orgTotalDuration, Title(..))
 import OrgStat.Outputs.Types (BlockOutput(..), BlockParams(..))
 import OrgStat.Util (dropEnd, timeF)
 
@@ -43,7 +43,7 @@ genBlockOutput BlockParams{..} (filterHasClock -> o0) = do
                 | otherwise = t
     formatter o =
         let dur = orgTotalDuration o
-            titleRaw = T.take _bpMaxLength $ o ^. orgTitle
+            titleRaw = T.take _bpMaxLength $ getTitle $ o ^. orgTitle
         in (titleRaw, timeF dur)
 
     withDepth :: Int -> Org -> [(Text,Text)]

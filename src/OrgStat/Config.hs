@@ -25,6 +25,7 @@ import OrgStat.Outputs.Types
   (BlockParams(..), ScriptParams(..), SummaryParams(..), TimelineParams(..))
 import OrgStat.Scope (AstPath(..), ScopeModifier(..))
 import OrgStat.Util (parseColour)
+import OrgStat.Ast (Title(..), Tag(..))
 
 -- | Exception type for everything bad that happens with config,
 -- starting from parsing to logic errors.
@@ -82,9 +83,12 @@ data OrgStatConfig = OrgStatConfig
     , confOutputDir      :: !FilePath -- default is "./orgstat"
     } deriving (Show)
 
+instance FromJSON Tag where
+    parseJSON = withText "Tag" $ pure . Tag
+
 instance FromJSON AstPath where
     parseJSON = withText "AstPath" $ \s ->
-        pure $ AstPath $ filter (not . T.null) $ T.splitOn "/" s
+        pure $ AstPath $ map Title $ filter (not . T.null) $ T.splitOn "/" s
 
 instance FromJSON ScopeModifier where
     parseJSON  = withObject "ScopeModifier" $ \o -> do

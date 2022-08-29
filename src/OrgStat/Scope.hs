@@ -17,18 +17,19 @@ import Control.Lens (to)
 import Control.Monad.Except (throwError)
 import qualified Data.Text as T
 
-import OrgStat.Ast (Org, atDepth, orgClocks, orgSubtrees, orgTags, orgTitle, traverseTree)
+import OrgStat.Ast (Org, Title(..), Tag(..), atDepth, orgClocks,
+                    orgSubtrees, orgTags, orgTitle, traverseTree)
 
 -- | Path in org AST is just a list of paths, head ~ closer to tree
 -- root.
 newtype AstPath = AstPath
-    { getAstPath :: [Text]
+    { getAstPath :: [Title]
     } deriving (Eq, Ord)
 
 instance Show AstPath where
     show (AstPath path)
         | null path = "<null_ast_path>"
-        | otherwise = intercalate "/" (map T.unpack path)
+        | otherwise = intercalate "/" (map (T.unpack . getTitle) path)
 
 isSubPath :: AstPath -> AstPath -> Bool
 isSubPath (AstPath l1) (AstPath l2) = l1 `isPrefixOf` l2
@@ -57,7 +58,7 @@ existsPath p o = o ^. atPath p . to isJust
 data ScopeModifier
     = ModPruneSubtree AstPath Int
       -- ^ Turns all subtrees starting with @path@ and then on depth @d@ into leaves.
-    | ModFilterTags [Text]
+    | ModFilterTags [Tag]
       -- ^ Given text tag names, it leaves only those subtrees that
       -- have one of these tag (tags are inherited).
     | ModSquash AstPath

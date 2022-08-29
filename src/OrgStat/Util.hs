@@ -6,6 +6,7 @@ module OrgStat.Util
        , dropEnd
        , addLocalTime
        , fromJustM
+       , selectColour
        , parseColour
        , hashColour
        , (??~)
@@ -57,12 +58,18 @@ parseColour (toString -> s) = toColour $ dropWhile (== '#') s
     toColour _                   = Nothing
     toWord8 a b = readMaybe $ "0x"++[a,b]
 
+selectColour :: String -> Colour Double
+selectColour =
+    (\(r,g,b) -> sRGB24 r g b) .
+    (\c -> let RGB{..} = toSRGBBounded c in (channelRed, channelGreen, channelBlue)) .
+    fromMaybe (error "selectColour is broken") .
+    parseColour @[Char] @Double
+
 -- | Generates a colour given salt and anything hashable. Doesn't return
 -- too dark or too light colors.
 hashColour :: (Hashable a) => Int -> a -> Colour Double
 hashColour salt item = colours !! (hashWithSalt salt item `mod` length colours)
   where
-    broken = error "Util#hashColour is broken"
     range = [-5,0,5]
     colours = filter (\c -> luminance c < 0.8 && luminance c > 0.06) mutate
     ac :: Word8 -> Integer -> Word8
@@ -72,10 +79,14 @@ hashColour salt item = colours !! (hashWithSalt salt item `mod` length colours)
                      | i <- range, j <- range, k <- range])
         coloursBasic
     coloursBasic =
-        map (toTriple . fromMaybe broken . parseColour @[Char] @Double) popularColours
-    toTriple c = let RGB{..} = toSRGBBounded c in (channelRed, channelGreen, channelBlue)
+        map ((\c -> let RGB{..} = toSRGBBounded c in (channelRed, channelGreen, channelBlue)) .
+             fromMaybe (error "hashColour is broken") .
+             parseColour @[Char] @Double)
+        popularColours
     popularColours :: [[Char]]
     popularColours = ["00FF00","01FFFE","FFA6FE","FFDB66","006401","010067","95003A","007DB5","FF00F6","FFEEE8","774D00","90FB92","0076FF","D5FF00","FF937E","6A826C","FF029D","FE8900","7A4782","7E2DD2","85A900","FF0056","A42400","00AE7E","683D3B","BDC6FF","263400","BDD393","00B917","9E008E","001544","C28C9F","FF74A3","01D0FF","004754","E56FFE","788231","0E4CA1","91D0CB","BE9970","968AE8","BB8800","43002C","DEFF74","00FFC6","FFE502","620E00","008F9C","98FF52","7544B1","B500FF","00FF78","FF6E41","005F39","6B6882","5FAD4E","A75740","A5FFD2","FFB167","009BFF","E85EBE"];
+
+
 
 -- | Maybe setter that does nothing on Nothing.
 (??~) :: ASetter s s a b -> Maybe b -> s -> s

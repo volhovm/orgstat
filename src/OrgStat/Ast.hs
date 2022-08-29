@@ -4,6 +4,8 @@
 
 module OrgStat.Ast
        ( Clock (..)
+       , Title (..)
+       , Tag (..)
        , Org (..)
        , orgTitle
        , orgTags
@@ -43,12 +45,18 @@ data Clock = Clock
     , cTo   :: LocalTime
     } deriving (Show,Eq,Ord)
 
+-- | Org title. Wrapper around Text.
+newtype Title = Title { getTitle :: Text } deriving (Show,Eq,Ord)
+
+-- | Org tag. Wrapper around Text.
+newtype Tag = Tag { getTag :: Text } deriving (Show,Eq,Ord)
+
 -- | Main datatype of org AST. It may contain some metadata if needed
 -- (e.g. current node depth, children number etc). Content of headers
 -- is ignored.
 data Org = Org
-    { _orgTitle    :: Text
-    , _orgTags     :: [Text]
+    { _orgTitle    :: Title
+    , _orgTags     :: [Tag]
     , _orgClocks   :: [Clock]
     , _orgSubtrees :: [Org]
     } deriving (Show,Eq)

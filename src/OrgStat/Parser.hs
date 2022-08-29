@@ -16,7 +16,7 @@ import qualified Data.Text as T
 import Data.Time (LocalTime(..), TimeOfDay(..), fromGregorian, getZonedTime, zonedTimeToLocalTime)
 import Data.Time.Calendar ()
 
-import OrgStat.Ast (Clock(..), Org(..), orgTags, traverseTree)
+import OrgStat.Ast (Clock(..), Org(..), orgTags, traverseTree, Title(..), Tag(..))
 
 ----------------------------------------------------------------------------
 -- Exceptions
@@ -37,8 +37,8 @@ parseOrg curTime todoKeywords = convertDocument <$> O.parseDocument todoKeywords
     convertDocument :: O.Document -> Org
     convertDocument (O.Document textBefore headings) =
         let fileLvlTags = extractFileTags textBefore
-            addTags t = ordNub $ fileLvlTags <> t
-            o = Org { _orgTitle    = ""
+            addTags t = ordNub $ (map Tag fileLvlTags) <> t
+            o = Org { _orgTitle    = Title ""
                     , _orgTags     = []
                     , _orgClocks   = []
                     , _orgSubtrees = map convertHeading headings
@@ -47,8 +47,8 @@ parseOrg curTime todoKeywords = convertDocument <$> O.parseDocument todoKeywords
 
     convertHeading :: O.Headline -> Org
     convertHeading headline = Org
-        { _orgTitle    = O.title headline
-        , _orgTags     = O.tags headline
+        { _orgTitle    = Title (O.title headline)
+        , _orgTags     = map Tag $ O.tags headline
         , _orgClocks   = getClocks $ O.section headline
         , _orgSubtrees = map convertHeading $ O.subHeadlines headline
         }

@@ -17,7 +17,7 @@ import Data.Time
 import Data.Time.Calendar (addGregorianMonthsRollOver)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 
-import OrgStat.Ast (Org(..), cutFromTo, orgTitle)
+import OrgStat.Ast (Org(..), cutFromTo, orgTitle, Title(..))
 import OrgStat.Config
   (ConfDate(..), ConfOutput(..), ConfRange(..), ConfReport(..), ConfScope(..), ConfigException(..),
   OrgStatConfig(..))
@@ -97,7 +97,7 @@ resolveScope scopeName = use (wdResolvedScopes . at scopeName) >>= \case
                 " are declared " <> show scopes
     resolveFoundScope ConfScope{..} = do
         orgs <- NE.toList <$> forM csPaths resolveInputOrg
-        let orgTop = Org "/" [] [] $ map (\(fn,o) -> o & orgTitle .~ fn) orgs
+        let orgTop = Org (Title "/") [] [] $ map (\(fn,o) -> o & orgTitle .~ Title fn) orgs
         wdResolvedScopes . at scopeName .= Just orgTop
         pure orgTop
 

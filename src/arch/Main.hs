@@ -155,7 +155,7 @@ printDocument Document{..} =
 
     printSection :: Int -> Section -> Text
     printSection depth Section{..} =
-        let indent = fromString (take (depth+1) (Universum.repeat ' ')) in
+        let indent = "" in -- fromString (take (depth+1) (Universum.repeat ' ')) in
         let Plns plns = sectionPlannings in
         let planningsStr =
                 T.intercalate " " $ map (\(k,v) -> show k <> ": " <> printTs v) $
@@ -201,7 +201,8 @@ printDocument Document{..} =
            withZero (show (ymdMonth yearMonthDay)) <> "-" <>
            withZero (show (ymdDay yearMonthDay))) `maybePrepend`
           maybe "" id dayName `maybePrepend`
-          maybe "" (\(h,m) -> withZero (show h) <> ":" <> withZero (show m)) hourMinute `maybePrepend`
+          maybe "" (\(h,m) -> withZero (show h) <> ":" <>
+                     withZero (show m)) hourMinute `maybePrepend`
           maybe "" printRepeater repeater `maybePrepend`
           maybe "" printDelay delay
 
