@@ -89,6 +89,7 @@ entryColour :: TimelineParams -> Org -> D.Colour Double
 entryColour params org = case tags of
     [] -> hashColour (params ^. tpColorSalt) (getTitle $ _orgTitle org)
     xs@(x:_) ->
+        trace (show (_orgTitle org) <> ": " <> show (_orgTags org)) $
         if "A" `elem` xs then convert "#AAAAAA"
         else if "M" `elem` xs then convert "#0000FF"
         else if "H" `elem` xs then convert "#00FFFF"

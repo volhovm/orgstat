@@ -17,7 +17,7 @@ import Data.Time
 import Data.Time.Calendar (addGregorianMonthsRollOver)
 import Data.Time.Calendar.WeekDate (toWeekDate)
 
-import OrgStat.Ast (Org(..), cutFromTo, orgTitle, Title(..))
+import OrgStat.Ast (Org(..), Title(..), cutFromTo, orgTitle)
 import OrgStat.Config
   (ConfDate(..), ConfOutput(..), ConfRange(..), ConfReport(..), ConfScope(..), ConfigException(..),
   OrgStatConfig(..))
@@ -25,29 +25,25 @@ import OrgStat.IO (readOrgFile)
 import OrgStat.Scope (applyModifiers)
 import OrgStat.WorkMonad (WorkM, wcConfig, wdReadFiles, wdResolvedReports, wdResolvedScopes)
 
+resolveConfDate :: (MonadIO m) => ConfDate -> m LocalTime
+resolveConfDate range = case range of
+    ConfNow       -> curTime
+    (ConfLocal x) -> pure x
 
--- | Converts config range to a pair of 'UTCTime', right bound not inclusive.
-convertRange :: (MonadIO m) => ConfRange -> m (LocalTime, LocalTime)
-convertRange range = case range of
-    (ConfFromTo f t)  -> (,) <$> fromConfDate f <*> fromConfDate t
-    (ConfBlockDay i) | i < 0 -> error $ "ConfBlockDay i is <0: " <> show i
-    (ConfBlockDay 0) -> (,) <$> (localFromDay <$> startOfDay) <*> curTime
-    (ConfBlockDay i) -> do
-        d <- (negate (i - 1) `addDays`) <$> startOfDay
-        pure $ localFromDayPair ((negate 1) `addDays` d, d)
-    (ConfBlockWeek i) | i < 0 -> error $ "ConfBlockWeek i is <0: " <> show i
-    (ConfBlockWeek 0) -> (,) <$> (localFromDay <$> startOfWeek) <*> curTime
-    (ConfBlockWeek i) -> do
-        d <- (negate (i - 1) `addWeeks`) <$> startOfWeek
-        pure $ localFromDayPair ((negate 1) `addWeeks` d, d)
-    (ConfBlockMonth i) | i < 0 -> error $ "ConfBlockMonth i is <0: " <> show i
-    (ConfBlockMonth 0) -> (,) <$> (localFromDay <$> startOfMonth) <*> curTime
-    (ConfBlockMonth i) -> do
-        d <- addGregorianMonthsRollOver (negate $ i-1) <$> startOfMonth
-        pure $ localFromDayPair ((negate 1) `addGregorianMonthsRollOver` d, d)
+    (ConfRelDay 0) -> localFromDay <$> startOfDay
+    (ConfRelDay i) -> do
+        d <- (negate i `addDays`) <$> startOfDay
+        pure $ localFromDay d
+    (ConfRelWeek 0) -> localFromDay <$> startOfWeek
+    (ConfRelWeek i) -> do
+        d <- (negate i `addWeeks`) <$> startOfWeek
+        pure $ localFromDay d
+    (ConfRelMonth 0) -> localFromDay <$> startOfMonth
+    (ConfRelMonth i) -> do
+        d <- (negate i `addGregorianMonthsRollOver`) <$> startOfMonth
+        pure $ localFromDay d
   where
     localFromDay d = LocalTime d $ TimeOfDay 0 0 0
-    localFromDayPair = bimap localFromDay localFromDay
     curTime = liftIO $ zonedTimeToLocalTime <$> getZonedTime
     curDay = localDay <$> curTime
     addWeeks i d = (i*7) `addDays` d
@@ -60,8 +56,11 @@ convertRange range = case range of
         d <- curDay
         let monthDate = pred $ view _3 $ toGregorian d
         pure $ fromIntegral (negate monthDate) `addDays` d
-    fromConfDate ConfNow       = curTime
-    fromConfDate (ConfLocal x) = pure x
+
+
+-- | Converts config range to a pair of 'UTCTime', right bound not inclusive.
+convertRange :: (MonadIO m) => ConfRange -> m (LocalTime, LocalTime)
+convertRange (ConfFromTo f t) = (,) <$> resolveConfDate f <*> resolveConfDate t
 
 -- | Resolves org file: reads from path and puts into state or just
 -- gets out of state if was read before.

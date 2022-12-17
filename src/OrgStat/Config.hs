@@ -21,11 +21,11 @@ import Data.Time (LocalTime)
 import Data.Time.Format (defaultTimeLocale, parseTimeM)
 import Universum
 
+import OrgStat.Ast (Tag(..), Title(..))
 import OrgStat.Outputs.Types
   (BlockParams(..), ScriptParams(..), SummaryParams(..), TimelineParams(..))
 import OrgStat.Scope (AstPath(..), ScopeModifier(..))
 import OrgStat.Util (parseColour)
-import OrgStat.Ast (Title(..), Tag(..))
 
 -- | Exception type for everything bad that happens with config,
 -- starting from parsing to logic errors.
@@ -39,13 +39,13 @@ instance Exception ConfigException
 data ConfDate
     = ConfNow
     | ConfLocal !LocalTime
+    | ConfRelDay !Integer
+    | ConfRelWeek !Integer
+    | ConfRelMonth !Integer
     deriving (Show)
 
 data ConfRange
     = ConfFromTo !ConfDate !ConfDate
-    | ConfBlockDay !Integer
-    | ConfBlockWeek !Integer
-    | ConfBlockMonth !Integer
     deriving (Show)
 
 data ConfOutputType
@@ -102,24 +102,15 @@ instance FromJSON ScopeModifier where
 
 instance FromJSON ConfDate where
     parseJSON (String "now") = pure $ ConfNow
-    parseJSON (String s)     =
-        case parseTimeM True defaultTimeLocale "%Y-%m-%d %H:%M" (T.unpack s) of
-            Nothing -> fail $
-                "Couldn't read date " <> show s <>
-                ". Correct format is 2016-01-01 23:59"
-            Just ut -> pure $ ConfLocal ut
-    parseJSON invalid        = typeMismatch "ConfDate" invalid
-
-instance FromJSON ConfRange where
     parseJSON (String s) | any (`T.isPrefixOf` s) ["day", "week", "month"] = do
         let splitted = T.splitOn "-" $ if "-" `T.isInfixOf` s then s else s <> "-"
             [range, number] = splitted
-            constructor :: (Monad m, MonadFail m) => Integer -> m ConfRange
+            constructor :: (Monad m, MonadFail m) => Integer -> m ConfDate
             constructor i = case range of
-                "day"   -> pure $ ConfBlockDay i
-                "week"  -> pure $ ConfBlockWeek i
-                "month" -> pure $ ConfBlockMonth i
-                t       -> fail $ "ConfRange@parseJSON can't parse " <> T.unpack t <>
+                "day"   -> pure $ ConfRelDay i
+                "week"  -> pure $ ConfRelWeek i
+                "month" -> pure $ ConfRelMonth i
+                t       -> fail $ "ConfDate@parseJSON can't parse " <> T.unpack t <>
                                   " should be [day|week|month]"
             numberParsed
                 | number == "" = pure 0
@@ -130,7 +121,35 @@ instance FromJSON ConfRange where
             fail $ "Couldn't parse range " <> T.unpack s <>
                    ", splitted is " <> show splitted
         constructor =<< numberParsed
+    parseJSON (String s)     =
+        case parseTimeM True defaultTimeLocale "%Y-%m-%d %H:%M" (T.unpack s) of
+            Nothing -> fail $
+                "Couldn't read date " <> show s <>
+                ". Correct format is 2016-01-01 23:59"
+            Just ut -> pure $ ConfLocal ut
+    parseJSON invalid        = typeMismatch "ConfDate" invalid
+
+instance FromJSON ConfRange where
     parseJSON (Object v)       = ConfFromTo <$> v .: "from" <*> v .: "to"
+    parseJSON (String s) | any (`T.isPrefixOf` s) ["day", "week", "month"] = do
+        let splitted = T.splitOn "-" $ if "-" `T.isInfixOf` s then s else s <> "-"
+            [range, number] = splitted
+            constructor :: (Monad m, MonadFail m) => Integer -> m ConfRange
+            constructor i = case range of
+                "day"   -> pure $ ConfFromTo (ConfRelDay i) (ConfRelDay $ i-1)
+                "week"  -> pure $ ConfFromTo (ConfRelWeek i) (ConfRelWeek $ i-1)
+                "month" -> pure $ ConfFromTo (ConfRelMonth i) (ConfRelMonth $ i-1)
+                t       -> fail $ "ConfDate@parseJSON can't parse " <> T.unpack t <>
+                                  " should be [day|week|month]"
+            numberParsed
+                | number == "" = pure 0
+                | otherwise = case readMaybe (T.unpack number) of
+                    Nothing -> fail $ "Couldn't parse number modifier of " <> T.unpack s
+                    Just x  -> pure x
+        when (length splitted /= 2) $
+            fail $ "Couldn't parse range " <> T.unpack s <>
+                   ", splitted is " <> show splitted
+        constructor =<< numberParsed
     parseJSON invalid          = typeMismatch "ConfRange" invalid
 
 instance FromJSON TimelineParams where
