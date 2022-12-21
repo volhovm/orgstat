@@ -5,10 +5,13 @@ module OrgStat.Outputs.Types
        ( TimelineParams (..)
        , tpColorSalt
        , tpLegend
+       , tpLegendColumnWidth
        , tpTopDay
        , tpColumnWidth
        , tpColumnHeight
+       , tpVSepWidth
        , tpBackground
+       , tpWeekStartsMonday
        , TimelineOutput (..)
 
        , SummaryParams (..)
@@ -39,12 +42,16 @@ data TimelineParams = TimelineParams
       -- ^ Salt added when getting color out of task name.
     , _tpLegend       :: !Bool
       -- ^ Include map legend?
+    , _tpLegendColumnWidth       :: !Double
+      -- ^ Legend column width in percent
     , _tpTopDay       :: !Int
       -- ^ How many items to include in top day (under column)
     , _tpColumnWidth  :: !Double
       -- ^ Column width in percent
     , _tpColumnHeight :: !Double
       -- ^ Column height
+    , _tpWeekStartsMonday :: !Bool
+      -- ^ Whether week starts on Monday (otherwise assumed Sunday)
     , _tpVSepWidth :: !Double
       -- ^ Width of the vertical separator columns (with hours)
     , _tpBackground   :: !(D.Colour Double)

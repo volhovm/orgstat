@@ -10,7 +10,8 @@ import Data.Colour.CIE (luminance)
 import Data.List (lookup, nub)
 import qualified Data.List as L
 import qualified Data.Text as T
-import Data.Time (Day, DiffTime, LocalTime(..), defaultTimeLocale, formatTime, timeOfDayToTime)
+import Data.Time (Day, DiffTime, DayOfWeek(..), LocalTime(..),
+                  defaultTimeLocale, formatTime, timeOfDayToTime, dayOfWeek)
 import Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude as D
 import qualified Prelude
@@ -20,7 +21,7 @@ import Universum
 import OrgStat.Ast (Clock(..), Org(..), orgClocks, orgTags, traverseTree, Tag(..), Title(..))
 import OrgStat.Outputs.Types
   (TimelineOutput(..), TimelineParams, tpBackground, tpColorSalt, tpColumnHeight, tpColumnWidth,
-  tpLegend, tpTopDay)
+  tpLegend, tpTopDay, tpVSepWidth, tpWeekStartsMonday, tpLegendColumnWidth)
 import OrgStat.Util (addLocalTime, hashColour, parseColour)
 
 
@@ -89,7 +90,7 @@ entryColour :: TimelineParams -> Org -> D.Colour Double
 entryColour params org = case tags of
     [] -> hashColour (params ^. tpColorSalt) (getTitle $ _orgTitle org)
     xs@(x:_) ->
-        trace (show (_orgTitle org) <> ": " <> show (_orgTags org)) $
+        -- trace (show (_orgTitle org) <> ": " <> show (_orgTags org)) $
         if "A" `elem` xs then convert "#AAAAAA"
         else if "M" `elem` xs then convert "#0000FF"
         else if "H" `elem` xs then convert "#00FFFF"
@@ -106,19 +107,23 @@ entryColour params org = case tags of
 fitLabelHeight :: TimelineParams -> Double -> Double -> Bool
 fitLabelHeight params n h = h >= (params ^. tpColumnHeight) * n
 
--- | Decides by <heuristic param n depending on font>, width of column
--- and string, should it be truncated. And returns modified string.
+-- TODO improve! this is very vague.
+-- | Truncates the string, heurestically, to fit into a box of length n.
+-- Will most likely fit, but will quite likely truncate more than necessary.
 fitLabelWidth :: TimelineParams -> Double -> Text -> Text
-fitLabelWidth params n s =
+fitLabelWidth _params n s =
     if T.length s <= toTake then s else T.take toTake s <> ".."
   where
-    toTake = floor $ n * ((params ^. tpColumnWidth) ** 1.2)
+    -- one character takes about 5.5 pixels, at most (taking kerning into account)
+    alpha = 5.7
+    toTake = floor $ n / alpha
 
 -- rectangle with origin in the top-left corner
 topLeftRect :: Double -> Double -> D.Diagram B
 topLeftRect w h =
   D.rect w h
   & D.moveOriginTo (D.p2 (-w/2, h/2))
+
 
 -- timeline for a single day
 timelineDay :: TimelineParams -> Day -> [(Org, (DiffTime, DiffTime))] -> D.Diagram B
@@ -130,9 +135,14 @@ timelineDay params day clocks =
       , clocksBackground
       ]
   where
-    width = 140 * (params ^. tpColumnWidth)
-    vSepWidth = 17 * (params ^. tpVSepWidth)
-    height = 700 * (params ^. tpColumnHeight)
+    colWidth = 140 * (params ^. tpColumnWidth)
+    colHeight = 700 * (params ^. tpColumnHeight)
+    labelWidth = colWidth - 5 -- to account for positioning
+
+    isWeekStartDay =
+        dayOfWeek day == (bool Sunday Monday (params ^. tpWeekStartsMonday))
+    vSepWidth =
+        (if isWeekStartDay then 40 else 17) * (params ^. tpVSepWidth)
 
     timeticks :: D.Diagram B
     timeticks =
@@ -149,22 +159,24 @@ timelineDay params day clocks =
           & D.lwO 1
           & D.lc (D.sRGB24 200 200 200)
         ]
-      & D.moveTo (D.p2 (0, negate $ fromInteger . round $ height * (fromIntegral hour / 24)))
+      & D.moveTo (D.p2 (0, negate $ fromInteger . round $ colHeight * (fromIntegral hour / 24)))
       & D.moveOriginTo (D.p2 (vSepWidth, 0))
 
     dateLabel :: D.Diagram B
     dateLabel =
       mconcat
       [ D.strutY 20
-      , D.alignedText 0.5 0 (formatTime defaultTimeLocale "%a, %d.%m.%Y" day)
+      , D.alignedText 0.5 0 (
+          T.unpack $
+          fitLabelWidth params colWidth (T.pack $ formatTime defaultTimeLocale "%a, %d.%m.%Y" day))
         & D.font "DejaVu Sans"
         & D.fontSize 12
-        & D.moveOriginTo (D.p2 (-width/2, 0))
+        & D.moveOriginTo (D.p2 (-colWidth/2, 0))
       ]
 
     clocksBackground :: D.Diagram B
     clocksBackground =
-      topLeftRect width height
+      topLeftRect colWidth colHeight
       & D.lw D.none
       & D.fc (params ^. tpBackground)
 
@@ -173,21 +185,23 @@ timelineDay params day clocks =
     showClock :: (Org, (DiffTime, DiffTime)) -> D.Diagram B
     showClock (org, (start, end)) =
       let
-        w = width
-        h = (* height) $ fromInteger (diffTimeMinutes $ end - start) / (24*60)
-        y = (* height) $ fromInteger (diffTimeMinutes start) / (24*60)
+        w = colWidth
+        h = (* colHeight) $ fromInteger (diffTimeMinutes $ end - start) / (24*60)
+        y = (* colHeight) $ fromInteger (diffTimeMinutes start) / (24*60)
 
-        label = getTitle $ _orgTitle org
         bgboxColour = entryColour params org
         bgbox = topLeftRect w h
               & D.lw D.none
               & D.fc bgboxColour
-        label' = D.alignedText 0 0.5 (T.unpack $ fitLabelWidth params 21 label)
+        label = D.alignedText 0 0.5 (T.unpack $ fitLabelWidth
+                                                   params
+                                                   (labelWidth)
+                                                   (getTitle $ _orgTitle org))
                & D.font "DejaVu Sans"
                & D.fontSize 10
                & D.fc (contrastFrom bgboxColour)
                & D.moveTo (D.p2 (5, -h/2))
-        box = mconcat $ bool [] [label'] (fitLabelHeight params 11 h) ++ [bgbox]
+        box = mconcat $ bool [] [label] (fitLabelHeight params 11 h) ++ [bgbox]
       in box & D.moveTo (D.p2 (0, -y))
 
 -- timelines for several days, with top lists
@@ -203,14 +217,20 @@ timelineDays params days clocks topLists =
     flip map (days `zip` (clocks `zip` topLists)) $ \(day, (dayClocks, topList)) ->
       D.vsep 5
       [ timelineDay params day dayClocks
-      , taskList params topList True
+      , taskList params (reverse $ sortOn snd topList) False
       ]
 
 -- task list, with durations and colours
 taskList :: TimelineParams -> [(Org, DiffTime)] -> Bool -> D.Diagram B
-taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
+taskList params labels legend =
+    D.vsep 5 $ map oneTask labels
   where
+
     contrastFrom c = if luminance c < 0.14 then D.sRGB24 224 224 224 else D.black
+
+    timeWidth = 26
+    underColumnLabelWidth = 140 * (params ^. tpColumnWidth) - timeWidth
+    legendColumnWidth = 180 * (params ^. tpLegendColumnWidth)
 
     oneTask :: (Org, DiffTime) -> D.Diagram B
     oneTask (org, time) =
@@ -222,14 +242,20 @@ taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd label
                & D.fontSize 10
                & D.fc (contrastFrom $ entryColour params org)
                & D.translateX 20
-             , D.rect 26 12
+             , D.rect timeWidth 12
                & D.fc (entryColour params org)
                & D.moveTo (D.p2 (9, 0))
                & D.lw D.none]
              , D.alignedText 0 0.5
-                 (T.unpack $ bool label (fitLabelWidth params 19 label) fit)
+                 (T.unpack $ (fitLabelWidth
+                                params
+                                (bool underColumnLabelWidth legendColumnWidth legend)
+                                label))
                & D.font "DejaVu Sans"
                & D.fontSize 10
+             , D.rect (bool underColumnLabelWidth legendColumnWidth legend) 12
+               & D.fc (params ^. tpBackground)
+               & D.lw D.none
              ]
 
     showTime :: DiffTime -> Prelude.String
@@ -297,11 +323,12 @@ timelineReport params org =
         map (take (params ^. tpTopDay) . reverse . sortOn (\(_task, time) -> time))
         byDayDurations
 
-    optLegend | params ^. tpLegend = [taskList params allDaysDurations False]
+    legendItems = take (floor $ (700::Double) / 15) $ reverse $ sortOn snd allDaysDurations
+    optLegend | params ^. tpLegend =
+                [D.vsep 0 $ [D.strutY 20, taskList params legendItems True]]
               | otherwise = []
 
-    pic =
-      D.vsep 30 $ [ timelineDays params daysToShow clocks topLists ] ++ optLegend
+    pic = D.hsep 20 $ [ timelineDays params daysToShow clocks topLists ] ++ optLegend
 
 processTimeline :: TimelineParams -> Org -> TimelineOutput
 processTimeline params org = timelineReport params org
