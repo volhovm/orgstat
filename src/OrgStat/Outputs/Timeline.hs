@@ -131,7 +131,7 @@ timelineDay params day clocks =
       ]
   where
     width = 140 * (params ^. tpColumnWidth)
-    ticksWidth = 20
+    vSepWidth = 17 * (params ^. tpVSepWidth)
     height = 700 * (params ^. tpColumnHeight)
 
     timeticks :: D.Diagram B
@@ -142,15 +142,15 @@ timelineDay params day clocks =
         [ D.alignedText 0.5 1 (show hour)
           & D.font "DejaVu Sans"
           & D.fontSize 8
-          & D.moveTo (D.p2 (ticksWidth/2, -5))
+          & D.moveTo (D.p2 (vSepWidth/2, -5))
           & D.fc (D.sRGB24 150 150 150)
-        , D.strokeT (D.p2 (0,0) D.~~ (D.p2 (ticksWidth, 0)))
+        , D.strokeT (D.p2 (0,0) D.~~ (D.p2 (vSepWidth, 0)))
           & D.translateY (-0.5)
           & D.lwO 1
           & D.lc (D.sRGB24 200 200 200)
         ]
       & D.moveTo (D.p2 (0, negate $ fromInteger . round $ height * (fromIntegral hour / 24)))
-      & D.moveOriginTo (D.p2 (ticksWidth, 0))
+      & D.moveOriginTo (D.p2 (vSepWidth, 0))
 
     dateLabel :: D.Diagram B
     dateLabel =
@@ -210,19 +210,24 @@ timelineDays params days clocks topLists =
 taskList :: TimelineParams -> [(Org, DiffTime)] -> Bool -> D.Diagram B
 taskList params labels fit = D.vsep 5 $ map oneTask $ reverse $ sortOn snd labels
   where
+    contrastFrom c = if luminance c < 0.14 then D.sRGB24 224 224 224 else D.black
+
     oneTask :: (Org, DiffTime) -> D.Diagram B
     oneTask (org, time) =
         let label = getTitle $ _orgTitle org
         in D.hsep 3
-             [ D.alignedText 1 0.5 (showTime time)
+             [ mconcat [
+                   D.alignedText 1 0.5 (showTime time)
                & D.font "DejaVu Sans"
                & D.fontSize 10
+               & D.fc (contrastFrom $ entryColour params org)
                & D.translateX 20
-             , D.rect 12 12
+             , D.rect 26 12
                & D.fc (entryColour params org)
-               & D.lw D.none
+               & D.moveTo (D.p2 (9, 0))
+               & D.lw D.none]
              , D.alignedText 0 0.5
-                 (T.unpack $ bool label (fitLabelWidth params 18 label) fit)
+                 (T.unpack $ bool label (fitLabelWidth params 19 label) fit)
                & D.font "DejaVu Sans"
                & D.fontSize 10
              ]

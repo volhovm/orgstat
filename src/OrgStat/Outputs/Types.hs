@@ -45,6 +45,8 @@ data TimelineParams = TimelineParams
       -- ^ Column width in percent
     , _tpColumnHeight :: !Double
       -- ^ Column height
+    , _tpVSepWidth :: !Double
+      -- ^ Width of the vertical separator columns (with hours)
     , _tpBackground   :: !(D.Colour Double)
       -- ^ Color of background
     } deriving (Show)

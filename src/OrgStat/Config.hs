@@ -159,6 +159,7 @@ instance FromJSON TimelineParams where
         _tpTopDay <- v .:? "topDay" .!= 5
         _tpColumnWidth <- v .:? "colWidth" .!= 1.0
         _tpColumnHeight <- v .:? "colHeight" .!= 1.0
+        _tpVSepWidth <- v .:? "vSepWidth" .!= 1.0
         _tpBackground <-
             (fromMaybe (error "Can't parse colour") . parseColour @Text . T.strip) <$>
             v .:? "background" .!= "#ffffff"
