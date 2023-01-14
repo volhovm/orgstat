@@ -4,6 +4,7 @@
 
 module OrgStat.Logic
        ( runOrgStat
+       , runOrgStatDefault
        ) where
 
 import Universum
@@ -13,15 +14,14 @@ import qualified Data.Text as T
 import Data.Time (defaultTimeLocale, formatTime, getZonedTime)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath ((</>))
-import Turtle (shell)
 
 import OrgStat.CLI (CommonArgs(..))
 import OrgStat.Config (ConfOutput(..), ConfOutputType(..), OrgStatConfig(..))
 import OrgStat.Helpers (resolveOutput, resolveReport)
-import OrgStat.Logging (logDebug, logInfo)
+import OrgStat.Logging (logDebug, logError, logInfo)
 import OrgStat.Outputs
   (genBlockOutput, genSummaryOutput, processScriptOutput, processTimeline, writeReport)
-import OrgStat.WorkMonad (WorkM, wcCommonArgs, wcConfig)
+import OrgStat.WorkMonad (WorkConfig(..), WorkM, runWorkM, wcCommonArgs, wcConfig)
 
 -- | Main application logic.
 runOrgStat :: WorkM ()
@@ -34,7 +34,7 @@ runOrgStat = do
             let createDir = do
                     let reportDir =
                             confOutputDir </>
-                            formatTime defaultTimeLocale "%F-%H-%M-%S" curTime
+                            formatTime defaultTimeLocale "%Y-%m-%d_%H-%M-%S" curTime
                     liftIO $ createDirectoryIfMissing True reportDir
                     pure reportDir
             maybe createDir pure =<< views wcCommonArgs caOutputDir
@@ -46,7 +46,7 @@ runOrgStat = do
 
     cliOuts <- views wcCommonArgs caOutputs
     outputsToProcess <-
-        bool (mapM resolveOutput cliOuts) (pure confOutputs) (null cliOuts)
+        maybe (pure confOutputs) (mapM resolveOutput) cliOuts
 
     forM_ outputsToProcess $ \ConfOutput{..} -> do
         logInfo $ "Processing output " <> coName
@@ -66,8 +66,14 @@ runOrgStat = do
                 let res = genBlockOutput boParams resolved
                 writeOutput coName res
 
-    whenM (views wcCommonArgs caXdgOpen) $ do
-        reportDir <- getOutputDir
-        logInfo "Opening reports using xdg-open..."
-        void $ shell ("for i in $(ls "<>T.pack reportDir<>"/*); do xdg-open $i; done") empty
     logInfo "Done"
+
+
+-- | Run orgstat from IO with the default error handler.
+runOrgStatDefault :: MonadIO m => OrgStatConfig -> CommonArgs -> m ()
+runOrgStatDefault config commonArgs =
+    runWorkM (WorkConfig config commonArgs) $
+    runOrgStat `catch` topHandler
+  where
+    topHandler (e :: SomeException) = do
+        logError $ "Top level error occured: " <> show e

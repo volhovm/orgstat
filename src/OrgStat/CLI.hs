@@ -7,29 +7,33 @@ module OrgStat.CLI
 
 import Universum
 
-import Options.Applicative.Simple (Parser, help, long, metavar, strOption, switch)
+import Data.Default (Default(..))
+import Options.Applicative.Simple (Parser, help, long, metavar, strOption)
 
 -- | Read-only arguments that inner application needs (in contrast to,
 -- say, logging severity).
 data CommonArgs = CommonArgs
-    { caXdgOpen   :: !Bool
-      -- ^ Open report types using xdg-open
-    , caOutputs   :: ![Text]
-      -- ^ Single output can be selected instead of running all of them.
+    {
+      caOutputs   :: !(Maybe [Text])
+      -- ^ Selected outputs to run; Nothing is interpreted as generate
+      -- all available outputs.
     , caOutputDir :: !(Maybe FilePath)
       -- ^ Output directory for all ... outputs.
     } deriving Show
 
+instance Default CommonArgs where
+    def = CommonArgs Nothing Nothing
+
 parseCommonArgs :: Parser CommonArgs
 parseCommonArgs =
     CommonArgs <$>
-    switch (long "xdg-open" <> help "Open each report using xdg-open") <*>
+    optional ( -- TODO test this parsing works correctly
     many (
         fromString <$>
         strOption (long "output" <>
                    long "select-output" <>
                    help ("Output name(s) you want to process " <>
-                         "(default: all outputs are processed)"))) <*>
+                         "(default: all outputs are processed)")))) <*>
     optional (
         strOption (long "output-dir" <>
                    metavar "FILEPATH" <>

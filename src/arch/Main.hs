@@ -19,8 +19,7 @@ import Options.Applicative.Simple
   (Parser, ReadM, help, long, maybeReader, metavar, option, simpleOptions, strOption, switch)
 import Paths_orgstat (version)
 import System.Directory (doesFileExist)
-import System.FilePath (takeBaseName, takeExtension)
-import System.FilePath ((</>))
+import System.FilePath (takeBaseName, takeExtension, (</>))
 
 import OrgStat.Logging
 
@@ -290,7 +289,7 @@ main :: IO ()
 main = do
     args@Args{..} <- getOptions
     let sev = if argsDebug then Debug else Info
-    initLogging sev
+    setLoggingSeverity sev
     logInfo $ show args
 
     orgFiles <- forM argsInputs $ readOrgFile $ argsTodoKeywords <> argsDoneKeywords

@@ -3,7 +3,7 @@
 module OrgStat.Logging
     (
       Severity (..)
-    , initLogging
+    , setLoggingSeverity
 
     , logDebug
     , logInfo
@@ -42,14 +42,15 @@ data LogInternalState = LogInternalState
     { lisMinSeverity :: Severity
     } deriving Show
 
--- | Internal logging state.
+-- | Internal logging state. Default is Info.
 {-# NOINLINE loggingState #-}
 loggingState :: MVar LogInternalState
-loggingState = unsafePerformIO $ newMVar $ LogInternalState Debug
+loggingState = unsafePerformIO $ newMVar $ LogInternalState Info
 
--- | Initialise logging state.
-initLogging :: Severity -> IO ()
-initLogging sev = modifyMVar_ loggingState $ const $ pure $ LogInternalState sev
+-- | Set logging severity to the given level. Default is Info.
+setLoggingSeverity :: Severity -> IO ()
+setLoggingSeverity sev =
+    modifyMVar_ loggingState $ const $ pure $ LogInternalState sev
 
 -- | Colorizes "Text".
 colorizer :: Severity -> Text -> Text
