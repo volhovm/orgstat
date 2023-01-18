@@ -54,11 +54,25 @@ data TimelineParams = TimelineParams
       -- ^ Whether week starts on Monday (otherwise assumed Sunday)
     , _tpVSepWidth :: !Double
       -- ^ Width of the vertical separator columns (with hours)
-    , _tpBackground   :: !(D.Colour Double)
-      -- ^ Color of background
+    , _tpBackground   :: !String
+      -- ^ Color of background, "#RRGGBB"
     } deriving (Show)
 
 makeLenses ''TimelineParams
+
+
+instance Default TimelineParams where
+    def = TimelineParams
+        { _tpColorSalt = 0
+        , _tpLegend = True
+        , _tpTopDay =  5
+        , _tpColumnWidth =  1.0
+        , _tpLegendColumnWidth =  1.0
+        , _tpColumnHeight = 1.0
+        , _tpVSepWidth = 1.0
+        , _tpWeekStartsMonday = True
+        , _tpBackground = "#ffffff"
+        }
 
 
 -- | SVG timeline image.

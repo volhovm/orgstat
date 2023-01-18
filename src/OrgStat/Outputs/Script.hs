@@ -60,4 +60,3 @@ processScriptOutput ScriptParams{..} = do
         liftIO $ case M.lookup reportName prevVarsMap of
             Nothing        -> unsetEnv reportName
             Just prevValue -> setEnv reportName prevValue
-  where

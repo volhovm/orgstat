@@ -20,8 +20,8 @@ import Data.Char (isLower, toLower)
 import Data.Colour (Colour)
 import Data.Colour.CIE (luminance)
 import Data.Colour.SRGB (RGB(..), sRGB24, toSRGBBounded)
-import Data.List (nub)
-import Data.List ((!!))
+import Data.List (nub, (!!))
+import qualified Data.Text as T
 import Data.Time (LocalTime(..), NominalDiffTime, addUTCTime, localTimeToUTC, utc, utcToLocalTime)
 import Universum
 
@@ -48,7 +48,8 @@ addLocalTime n a =
 
 -- | Parses colour from format '#rrggbb' or just 'rrggbb'
 parseColour :: forall s a. (ToString s, Floating a, Ord a) => s -> Maybe (Colour a)
-parseColour (toString -> s) = toColour $ dropWhile (== '#') s
+parseColour (toString -> s) =
+    toColour $ dropWhile (== '#') $ T.unpack $ T.strip $ T.pack s
   where
     toColour [r1,r2,g1,g2,b1,b2] = do
         r <- toWord8 r1 r2

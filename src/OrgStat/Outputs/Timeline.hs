@@ -10,18 +10,19 @@ import Data.Colour.CIE (luminance)
 import Data.List (lookup, nub)
 import qualified Data.List as L
 import qualified Data.Text as T
-import Data.Time (Day, DiffTime, DayOfWeek(..), LocalTime(..),
-                  defaultTimeLocale, formatTime, timeOfDayToTime, dayOfWeek)
+import Data.Time
+  (Day, DayOfWeek(..), DiffTime, LocalTime(..), dayOfWeek, defaultTimeLocale, formatTime,
+  timeOfDayToTime)
 import Diagrams.Backend.SVG (B)
 import qualified Diagrams.Prelude as D
 import qualified Prelude
 import Text.Printf (printf)
 import Universum
 
-import OrgStat.Ast (Clock(..), Org(..), orgClocks, orgTags, traverseTree, Tag(..), Title(..))
+import OrgStat.Ast (Clock(..), Org(..), Tag(..), Title(..), orgClocks, orgTags, traverseTree)
 import OrgStat.Outputs.Types
   (TimelineOutput(..), TimelineParams, tpBackground, tpColorSalt, tpColumnHeight, tpColumnWidth,
-  tpLegend, tpTopDay, tpVSepWidth, tpWeekStartsMonday, tpLegendColumnWidth)
+  tpLegend, tpLegendColumnWidth, tpTopDay, tpVSepWidth, tpWeekStartsMonday)
 import OrgStat.Util (addLocalTime, hashColour, parseColour)
 
 
@@ -178,7 +179,8 @@ timelineDay params day clocks =
     clocksBackground =
       topLeftRect colWidth colHeight
       & D.lw D.none
-      & D.fc (params ^. tpBackground)
+      & D.fc (fromMaybe (error "Can't parse colour") $
+              parseColour $ params ^. tpBackground)
 
     contrastFrom c = if luminance c < 0.14 then D.sRGB24 224 224 224 else D.black
 
@@ -254,7 +256,8 @@ taskList params labels legend =
                & D.font "DejaVu Sans"
                & D.fontSize 10
              , D.rect (bool underColumnLabelWidth legendColumnWidth legend) 12
-               & D.fc (params ^. tpBackground)
+               & D.fc (fromMaybe (error "Can't parse colour") $
+                       parseColour $ params ^. tpBackground)
                & D.lw D.none
              ]
 
