@@ -1,0 +1,61 @@
+scopes:
+  - paths: ['/home/volhovm/org/work.org', '/home/volhovm/org/private.org']
+timelineDefault:
+  colorSalt: 9
+  colorStrategy:
+    - tagMatches: [A]
+      color: "#AAAAAA"
+    - tagMatches: [B]
+      color: hash
+  legend: true
+  legendColWidth: 0.6
+  colWidth: 0.7
+  colHeight: 1.1
+reports:
+  - name: lastWeekWork
+    range: week-1
+    modifiers:
+      - type: filterbytag
+        tags: [M,H,sleep]
+
+  - name: last7Days
+    range:
+      from: day-6
+      to: now
+
+  - name: thisWeekMytag
+    range: week
+    modifiers:
+      - type: filterbytag
+        tag: mytag
+
+  - name: todayMytag
+    range: day
+    modifiers:
+      - type: filterbytag
+        tag: mytag
+
+
+outputs:
+  - name: thisWeekTimeline
+    report: thisWeekTimelineReport
+    type: timeline
+  - name: thisWeekTimelineAll
+    report: last7Days
+    type: timeline
+  - name: thisWeekStats
+    type: summary
+    template: "mytag: <fc=#355254>%thisWeekMytag%</fc> "
+  - name: thisWeekStatsScript
+    type: script
+    interpreter: "/bin/env sh"
+    scriptPath: ~/dotfiles/scripts/orgstat_format_bar.sh
+    reports: [thisWeekMytag, todayMytag]
+
+  # For debug
+  - name: debugBlock
+    type: block
+    report: todayMytag
+
+outputDir: /home/volhovm/code/orgstat/
+todoKeywords: [ TD, ST, WT, CL, DN ]
